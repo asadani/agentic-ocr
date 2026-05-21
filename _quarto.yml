@@ -12,6 +12,7 @@ book:
   repo-url: https://github.com/anujsadani/agentic-ocr
   repo-actions: [edit, issue]
   downloads: [pdf]
+  output-file: agentic-ocr-2026
   sharing: [twitter, linkedin]
   sidebar:
     style: docked
@@ -63,26 +64,15 @@ format:
     tbl-cap-location: top
     mermaid:
       theme: neutral
-  pdf:
-    documentclass: scrbook
-    classoption: [oneside]
+  typst:
     papersize: a4
-    geometry:
-      - top=25mm
-      - bottom=25mm
-      - left=22mm
-      - right=22mm
+    margin:
+      x: 22mm
+      y: 25mm
     toc-depth: 3
     number-sections: true
-    colorlinks: true
     fig-cap-location: bottom
     tbl-cap-location: top
-    keep-tex: false
-    include-in-header:
-      text: |
-        \usepackage{microtype}
-        \usepackage{booktabs}
-        \usepackage{longtable}
 
 execute:
   freeze: auto
