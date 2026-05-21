@@ -110,6 +110,14 @@ The cost of Pattern C is the engineering. Every component is a real piece of sof
 
 Pattern C is what's behind Reducto's hybrid architecture, IBM Granite-Docling and the Docling pipeline framework, OpenDataLab's MinerU, and the PaddleOCR / PP-Structure lineage. It is also implicit in any in-house implementation that takes high-stakes extraction seriously enough to refuse the "one model does everything" path.
 
+It is worth naming that the **hyperscaler ecosystems also expose layout-detector primitives** that can serve the same architectural role inside a Pattern C pipeline, for buyers already committed to a cloud vendor:
+
+- **Azure AI Document Intelligence Layout** ($10/1k pages) — text, tables, paragraphs, section headings, selection marks, figure regions with bounding boxes. The Azure-native answer for the layout-extraction stage.
+- **Google Document AI Layout Parser** ($10/1k pages) — Gemini-powered layout extraction plus initial chunking in a single call; closest hyperscaler equivalent to LlamaParse Agentic for buyers on GCP.
+- **AWS Textract AnalyzeDocument with Layout feature** ($10–$25/1k pages, stackable with Forms/Tables/Queries) — newer addition to the Textract feature set; less mature than Azure or Google Layout but functional.
+
+These hyperscaler Layout APIs serve the same architectural role as PP-StructureV3 or Granite-Docling in the layout-detector slot of Pattern C — they emit structured regions that downstream extractors can route off. A pipeline that uses Azure DI Layout to segment, an LLM (frontier or Granite-Docling) to extract from text blocks, and a specialized table extractor for table regions, plus a schema validator and HITL queue, is a valid Pattern C architecture for organizations committed to Azure. The same shape works on GCP with Document AI Layout Parser and on AWS with Textract AnalyzeDocument Layout. Chapter 7 walks the hyperscaler sub-products in more detail.
+
 The honest framing: **Pattern C is the architecture for workloads where errors cost more than engineering does**. Healthcare prior-authorization fits because a denied claim costs hundreds to thousands of dollars in downstream rework, dwarfing the marginal engineering cost of a hybrid pipeline. Legal contract review fits because a missed clause can be a six-figure legal exposure. KYC document review fits because a wrongly approved high-risk account can be a regulatory event. Commodity invoice processing rarely fits, because the marginal error cost is too low to justify the engineering.
 
 ## Tool chains, memory, and HITL gates

@@ -46,6 +46,20 @@ Granite-Docling is, by some distance, the most **production-credible** open-sour
 
 The honest caveats. Granite-Docling-258M is single-shot — it produces output in one pass and does not by itself implement the reflection loop that defines Pattern B in @sec-architecture. For a true agentic loop, you wrap Granite-Docling in the Docling framework with additional validation and retry logic, or you combine it with NuExtract-style downstream extraction. The result is a Pattern B or C architecture; the model is a strong primitive within it.
 
+## Marker and Surya (DataLab-to)
+
+Two of the most-used open-source tools in 2026, often missing from formal vendor surveys because they sit slightly outside the "model" category — they are **end-to-end document conversion pipelines** built on top of specialized models, maintained by the same team that ships Chandra.
+
+**Marker** (originally `VikParuchuri/marker`, now `datalab-to/marker`) is the practitioner's default for one-shot PDF → Markdown conversion. It accepts PDF, image, DOCX, PPTX, XLSX, HTML, and EPUB inputs, and emits Markdown, JSON, HTML, or document chunks. Under the hood it composes Surya for OCR, a layout model, and reading-order detection, producing structured output that is direct-consumable by downstream RAG and agentic systems.
+
+Marker has become the de-facto answer in 2026 to "what's the safest default open-source PDF-to-Markdown tool if I'm only going to install one." It is widely cited in the field and benchmarked frequently against Docling, MinerU, and pdf-craft as a peer.
+
+**Surya** is the OCR + layout + reading-order toolkit that powers Marker but is also useful standalone. Strong on 90+ languages, with separate detection and recognition modules that can be used as primitives in custom pipelines. Surya is what you reach for when you want to build your own document pipeline around an open-source OCR engine and need more than Tesseract.
+
+**License caveat worth flagging.** Both Marker and Surya are GPL-3.0 licensed for open-source use. DataLab-to offers a separate commercial license for use in proprietary products — GPL excludes most SaaS productization scenarios, and getting the commercial license is a normal procurement conversation if Marker/Surya are central to your product. For internal use (HITL workflows, internal-only RAG systems, research) GPL is fine. For SaaS resold to customers, you need the commercial license or a permissively-licensed alternative.
+
+This is the same licensing trade-off as MinerU (AGPL-3.0) — and the same team behind Marker also ships **Chandra** (covered separately above with the OpenRAIL license), so DataLab-to is increasingly the open-source equivalent of a focused commercial vendor: multiple complementary products, real engineering depth, with a real license-review conversation attached.
+
 ## OpenDataLab MinerU and MonkeyOCR
 
 OpenDataLab is the open-source AI research arm of Shanghai AI Laboratory; they are the most active institution in 2026 open-source document AI.
@@ -125,6 +139,20 @@ For self-hosted deployments at very high volume, the throughput numbers matter m
 
 For perspective: at 493k pages per day on a single H100 at $2.69/hour, the per-page parsing cost is roughly **$0.000135**. That number — about 1/700th of LlamaParse Agentic and roughly 1/15th of OlmOCR-2 — is what makes self-hosted open-source compelling at high volume. The trade-off is engineering capacity. You need a team that can operate model serving, autoscaling, eval pipelines, HITL queues, and observability. If you have the team, the economics are unanswerable in your favor.
 
+## A note on frontier proprietary VLMs as the model layer
+
+This is an open-source chapter, but a fair fraction of "open-source agentic OCR pipelines" in 2026 actually use a **frontier proprietary VLM** as their model layer — Claude (Anthropic), GPT-4o or GPT-4.1 (OpenAI), or Gemini (Google) — wrapped in open-source orchestration. The pattern deserves naming because it is widespread and because the cost profile is meaningfully different from the pure-open-source path.
+
+Three frontier VLMs are routinely used this way in 2026:
+
+- **Claude (Anthropic)** supports native PDF input via the API and is widely used as the model layer when extraction quality and instruction-following matter more than per-token cost. Many internal agentic pipelines combine Claude for the extraction/reflection steps with open-source layout detection (Surya, PP-StructureV3) for the structural stage.
+- **GPT-4o / GPT-4.1 (OpenAI)** is the most common frontier VLM in the wild for document workflows. Native vision input via API. Structured-output and function-calling support are mature. Many of the "I built a custom Pattern B" stories you hear at conferences use GPT-4o under the hood.
+- **Gemini (Google)** is the model that powers Google Document AI Layout Parser under the hood. Available directly via the Gemini API for custom pipelines. Strong on multimodal and long-context document tasks.
+
+The cost profile is different in two ways. **Per-page cost is dominated by output tokens**, not by a fixed parsing fee — a long document costs proportionally more, and the model's verbosity matters. **Compliance posture is the API provider's**, not yours — using Anthropic's API for healthcare documents requires Anthropic's BAA (now available), the same for OpenAI and Google. Self-hosting is structurally not an option, which is the line where buyers with hard data-sovereignty requirements peel off to the open-source side.
+
+The honest framing: frontier VLMs sit in an *adjacent* category to open-source agentic OCR. The two complement each other — open-source primitives for layout and table extraction, frontier VLM for high-stakes extraction and reflection, orchestrated by open-source frameworks (LangChain, LlamaIndex OSS, custom Python). A team building a custom Pattern B or C pipeline in 2026 is more likely to use this hybrid than either pure-open-source or pure-commercial-vendor.
+
 ## Tesseract and the still-useful primitives
 
 Tesseract (Apache-2.0) is still in the ecosystem. It is **not** agentic OCR, by Chapter 3's definition, and any vendor marketing a "Tesseract + LLM cleanup" pipeline as agentic OCR is wrapper-washing (Chapter 13).
@@ -151,10 +179,15 @@ The data in `data/opensource-players.csv` consolidates the per-model details. Th
 | PP-StructureV3 | <100M | Apache-2.0 | Matches Gemini-2.5-Pro on OmniDocBench at tiny scale | Less agentic by itself |
 | Granite-Docling-258M | 258M | Apache-2.0 | Most production-credible open-source pick | Single-shot; wrap for Pattern B |
 | Docling (framework) | N/A | MIT | Pipeline glue for ensembles | Not agentic by itself |
+| **Marker** | N/A (orchestrator) | GPL-3.0 (commercial option) | Most popular open-source PDF→Markdown tool | GPL excludes SaaS resale without commercial license |
+| **Surya** | N/A | GPL-3.0 (commercial option) | OCR + layout + reading order primitive | Same GPL caveat as Marker |
 | LightOnOCR-1B | 1B | Open | Throughput leader (~493k pages/day H100) | Newer; less validated |
 | NuExtract3 | 2B–8B | Open | Best-in-class structured extraction post-parse | Extraction-only |
 | AgenticOCR | N/A | Apache-2.0 | Reference implementation for agentic loops | Less mature tooling |
 | Tesseract | N/A | Apache-2.0 | Cheap text-only OCR primitive | Not agentic; not for tables |
+| *Claude (frontier VLM)* | N/A | Closed API | Strong model layer in custom pipelines | Closed-source; pay-per-token |
+| *GPT-4o / GPT-4.1 (frontier VLM)* | N/A | Closed API | Most common model layer in 2026 custom pipelines | Closed-source; pay-per-token |
+| *Gemini (frontier VLM)* | N/A | Closed API | Powers Google DocAI Layout Parser; native PDF | Closed-source; pay-per-token |
 
 The matrix above is the most actionable artifact of this chapter. Reading it: pick the model whose "best for" column matches your workload, whose license fits your deployment context, and whose caveat does not disqualify it for you specifically. Then evaluate on your own golden set.
 

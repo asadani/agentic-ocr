@@ -61,17 +61,76 @@ OCR 3 is the right pick when cost-per-page is the binding constraint, when throu
 
 ## Hyperscaler APIs
 
-The three hyperscaler OCR APIs — Google Document AI, AWS Textract, Azure Document Intelligence — are mature, integrated, and lagging the agentic frontier in measurable ways.
+The three hyperscaler ecosystems — Google Document AI, AWS Textract (plus Bedrock Data Automation), Azure Document Intelligence (plus Azure AI Vision Read) — are mature, integrated, and significantly more nuanced than a single "hyperscaler OCR API" framing suggests. Each is really a *family* of sub-products at different price points, with different output shapes, and with different positions on the spectrum from "cheap text OCR" to "agentic-flavored extraction." Buyers who pick the wrong sub-product within the right hyperscaler are a common 2026 failure mode.
 
-**Google Document AI.** Per-page $0.015–$0.065 depending on processor (Form Parser, Contract Parser, Lending DocAI, custom). Strong integration with the rest of GCP, broad compliance certifications, mature SDK. Architecturally template-leaning — the product line grew out of pre-VLM document AI and reflects that legacy. The agentic story is being added, but lags the specialist vendors by roughly twelve to eighteen months in feature depth.
+This section walks each ecosystem by sub-product rather than as a monolith, because the procurement-relevant choices live at the sub-product level.
 
-**AWS Textract.** Per-page $0.0015 (basic OCR) to $0.065 (AnalyzeDocument with Queries). The basic tier is the cheapest credible parsing in the commercial landscape; the advanced tiers are competitive on price but still architecturally template-leaning. The integration with Amazon Augmented AI (A2I) for HITL is mature and well-engineered. Like Document AI, the agentic story is in active development.
+### Azure — Document Intelligence and AI Vision Read
 
-**Azure Document Intelligence.** Per-page $0.0015–$0.050. The custom-model story is the strongest of the three hyperscalers — Azure has invested deeply in letting customers fine-tune extraction models for their specific document types, which is genuinely valuable for narrow workloads. Compliance certifications and Microsoft 365 integration round out the offering.
+Microsoft ships document AI through two distinct services that are commonly confused:
 
-The honest framing of the hyperscaler tier: these are the right pick for buyers whose procurement processes require an established cloud-vendor relationship, whose compliance requirements rule out smaller vendors, and whose documents are within the hyperscalers' design space (forms, invoices, contracts in clean digital format). They are not the right pick for adversarial agentic workloads — the Reducto vs. hyperscaler gap on RD-TableBench is roughly twenty percentage points, and that gap shows up directly in your error rate on real documents.
+**Azure AI Vision Read** is a standalone OCR endpoint inside the broader Azure AI Vision service. It returns text with reading order; it does **not** return structured layout or fields. Cost is roughly $1–$1.50 per 1,000 pages. The right pick when you only need clean text — accessibility transcription, search indexing, bulk archive digitization — and do not want to pay for structural extraction you will not use.
 
-A particular failure mode worth naming: teams that pick a hyperscaler because "the procurement is easier" and then discover six months later that the documents they actually want to process are in the gap between what the hyperscaler does well and what the workload requires. The savings on procurement are real; the costs of the wrong architecture are larger. Run the cross-validation on your golden set before committing.
+**Azure AI Document Intelligence** (formerly Form Recognizer) is the full document AI product, and it splits into four sub-models worth understanding individually:
+
+- **Read** — $1.50/1k pages. OCR plus reading order plus basic key-value pair extraction. Cheapest tier of Document Intelligence; the right pick when Vision Read is not quite enough but you do not need tables or structural metadata.
+- **Layout** — $10/1k pages. Extracts text, tables, paragraphs, section headings, selection marks (checkboxes), and figure regions with bounding boxes. **This is the sub-model most relevant to agentic OCR pipelines.** It serves the same architectural role as PP-StructureV3 or Granite-Docling in a Pattern C hybrid — a strong layout-detector primitive that downstream stages can route off. Many in-house agentic OCR systems built on Azure use Layout as the parsing layer and add their own reflection loop on top.
+- **Prebuilt models** — $10/1k pages. Pretrained extractors for common document types: invoices, receipts, ID documents, business cards, W-2, 1098, contracts, marriage certificates, mortgage documents, health insurance cards. The right pick when your documents are one of the supported types and the extraction schema matches your downstream consumer's needs.
+- **Custom** — $30/1k pages. Train your own extractor on labeled samples. Template models (free training) for narrow stable layouts; neural models (free for the first 10 hours of training, $3/hr thereafter) for variable layouts. The custom-model story is the strongest of any hyperscaler — Azure has invested deeply here and it shows.
+
+High-volume commitments drop pricing meaningfully: at 8 million pages per month, the effective rate falls to around $0.53/1k pages — roughly 50% off list. Free tier covers the first 500 pages per month.
+
+Honest framing: Azure DI in 2026 is the most *complete* hyperscaler offering for buyers who want to compose their own agentic pipeline from primitives. Layout + Prebuilt + Custom + Azure AI Foundry orchestration gives you most of a Pattern C architecture, with the compliance posture (HIPAA BAA, SOC 2 Type II, FedRAMP High) that classic IDP vendors fought to match.
+
+### Google — Document AI and the Layout Parser
+
+Google Document AI is similarly a *family* of processors, each with its own price point:
+
+- **Document OCR** — approximately $0.65/1k pages for basic OCR. Cheapest tier; text + reading order, no structure.
+- **Layout Parser** — $10/1k pages, and the most strategically interesting Google offering in 2026. It uses **Gemini under the hood** to do layout extraction *plus initial chunking* in a single call. The output is structured for direct downstream use in RAG and agentic pipelines, which makes it the closest hyperscaler equivalent to the AI-native specialists' agentic mode. Worth shortlisting for buyers already committed to GCP who want to skip the "compose your own pipeline" engineering.
+- **Form Parser** — $30/1k pages below 1M/mo, $20/1k above. Forms plus tables in one call. Older product, still useful.
+- **Specialized processors** — pretrained extractors for invoices, US driver licenses, US passports, IRS 1040, W-2, and a dozen other specific document types. Pricing varies; broadly comparable to Form Parser.
+- **Custom Document Extractor** — $30/1k pages below 1M/mo, $20/1k above. Train your own. Hosting a deployed custom processor adds $0.05/hour (~$438/year for always-on).
+- **Document AI Workbench** — the orchestration layer that lets you chain processors. Increasingly the entry point Google recommends for new agentic workloads.
+
+New customers get $300 in free GCP credits, which goes a long way at these unit costs.
+
+Honest framing: Google's Layout Parser is the **hyperscaler product most under-appreciated** by 2026 procurement teams. A team that needs Pattern B parsing and is on GCP can shortlist Layout Parser alongside LlamaParse Agentic and find it competitive on quality at a comparable price point — without the third-party vendor relationship.
+
+### AWS — Textract and Bedrock Data Automation
+
+AWS has the messiest sub-product surface, partly because Textract grew incrementally and partly because the newer **Amazon Bedrock Data Automation** product is now the recommended starting point for new IDP workloads, but Textract remains the right answer for many existing pipelines.
+
+**Textract** sub-features:
+
+- **DetectDocumentText** — approximately $1.50/1k pages for basic OCR. Text only, no structure.
+- **AnalyzeDocument** — feature-stackable, $15–$65/1k pages depending on which features you turn on:
+  - *Forms* ($50/1k) — key-value pair extraction.
+  - *Tables* ($15/1k) — table structure extraction.
+  - *Queries* ($15–$65/1k) — ask questions like "what is the invoice number" and get answers.
+  - *Layout* ($10–$25/1k) — paragraph, header, footer, and reading order detection. AWS's equivalent to Azure DI Layout, added later and less mature.
+  Stack them: a typical real pipeline uses Forms + Tables + Layout together.
+- **AnalyzeID** — $2.50/1k. Prebuilt extractor for driver licenses and passports.
+- **AnalyzeExpense** — $10/1k. Prebuilt for receipts and invoices.
+- **StartLendingAnalysis** — multi-document workflow for mortgage and lending packets. Premium pricing.
+- **Amazon Augmented AI (A2I)** integration — the HITL queue layer, well-engineered and the strongest HITL story among hyperscalers.
+
+**Amazon Bedrock Data Automation (BDA)** — released late 2024, production-ready by 2026 — is AWS's agentic-flavored answer to LlamaParse Agentic and Azure DI Layout. Per-page pricing is **$0.010/page for parsing plus $0.040/page for Custom Output** (with an incremental charge if your blueprint defines more than 30 fields). The pricing is flat per document, which makes cost forecasting straightforward. BDA handles classification + extraction through a single multimodal API — and the API itself is multimodal beyond documents (audio, video, image), reflecting AWS's strategic positioning of Bedrock as the broader unstructured-data platform.
+
+AWS's own guidance recommends BDA as the starting point for *new* IDP projects, and Textract for incremental work on existing pipelines. That is the right framing for buyers as well: if you are greenfield, start with BDA; if you have Textract in production already, the migration cost may not justify switching.
+
+Honest framing: AWS in 2026 is the **most fragmented** of the three hyperscalers and also the **most actively evolving**. The cost-effective configurations for an agentic workload involve BDA for parsing + reasoning, with Textract feature-stacks as fallback or supplemental tools. Buyers who pick "AWS" without picking a specific configuration usually end up over-paying on Textract features they did not need.
+
+### The general framing across all three
+
+Two patterns hold across hyperscaler ecosystems:
+
+1. **The "Layout" sub-product is the load-bearing piece for agentic workloads.** Azure DI Layout, Google Document AI Layout Parser, AWS Textract AnalyzeDocument (Layout feature). These are the primitives that practitioners actually use as the parsing layer in custom agentic pipelines, including Pattern C hybrid architectures. The basic OCR tiers (Vision Read, Document OCR, DetectDocumentText) are too thin; the prebuilt/extraction tiers are too narrow.
+2. **The agentic story is the newest layer.** Google Layout Parser (Gemini-powered) is the most production-credible hyperscaler-native agentic offering. AWS Bedrock Data Automation is close behind and improving. Azure's agentic story currently relies on chaining Layout + Custom + Foundry orchestration rather than a single packaged agentic product. Watch this race through 2027 — it is the one closing fastest.
+
+The honest framing of the hyperscaler tier overall: these are the right pick for buyers whose procurement processes require an established cloud-vendor relationship, whose compliance requirements rule out smaller vendors, and whose documents fit within the hyperscalers' design envelope. Choosing the wrong sub-product within the right hyperscaler is the failure mode this section is calibrated to prevent.
+
+A particular failure mode worth naming: teams that pick a hyperscaler because "the procurement is easier" and then discover six months later that the documents they actually want to process are in the gap between what the hyperscaler does well and what the workload requires. The savings on procurement are real; the costs of the wrong architecture are larger. Run the cross-validation on your golden set before committing — and use the right sub-product when you do.
 
 ## Classic IDP, retrofitted
 
@@ -101,7 +160,7 @@ The honest caveats are familiar: vendor-published numbers, OfficeQA is a new ben
 
 The data in `data/commercial-players.csv` and the per-vendor cost notes above resolve into the following compact summary:
 
-| Tier | Vendor | Per-page low | Per-page high |
+| Tier | Vendor / Sub-product | Per-page low | Per-page high |
 |---|---|---|---|
 | AI-native | LlamaParse | $0.00125 | $0.05625 |
 | AI-native | Reducto | $0.005 | $0.020 |
@@ -109,9 +168,19 @@ The data in `data/commercial-players.csv` and the per-vendor cost notes above re
 | AI-native | Mistral Document AI | $0.001 | $0.002 |
 | AI-native commercial IDP | Nanonets | $0.05/block | $0.30/block |
 | AI-native commercial IDP | Docsumo | (subscription) | (subscription) |
-| Hyperscaler | Google Document AI | $0.015 | $0.065 |
-| Hyperscaler | AWS Textract | $0.0015 | $0.065 |
-| Hyperscaler | Azure DI | $0.0015 | $0.050 |
+| Hyperscaler — Azure | AI Vision Read | $0.001 | $0.0015 |
+| Hyperscaler — Azure | DI Read | $0.0015 | $0.0015 |
+| Hyperscaler — Azure | DI Layout | $0.010 | $0.010 |
+| Hyperscaler — Azure | DI Prebuilt | $0.010 | $0.010 |
+| Hyperscaler — Azure | DI Custom | $0.030 | $0.030 |
+| Hyperscaler — Google | Document AI OCR | $0.00065 | $0.0015 |
+| Hyperscaler — Google | DocAI Layout Parser | $0.010 | $0.010 |
+| Hyperscaler — Google | DocAI Form Parser | $0.020 | $0.030 |
+| Hyperscaler — Google | DocAI Custom Extractor | $0.020 | $0.030 |
+| Hyperscaler — AWS | Textract DetectDocumentText | $0.0015 | $0.0015 |
+| Hyperscaler — AWS | Textract AnalyzeDocument | $0.015 | $0.065 |
+| Hyperscaler — AWS | Textract AnalyzeID / AnalyzeExpense | $0.0025 | $0.010 |
+| Hyperscaler — AWS | Bedrock Data Automation | $0.010 | $0.040 |
 | Classic IDP | ABBYY Vantage | $0.020 | $0.100 |
 | Classic IDP | Hyperscience | $0.030 | $0.150 |
 | Classic IDP | UiPath DU | $0.020 | $0.080 |
