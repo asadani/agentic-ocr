@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>10&nbsp; Benchmarks – Agentic OCR in 2026</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../chapters/11-evaluating-your-pipeline.html" rel="next">
+<link href="../chapters/09-vendor-selection.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-fd4ce07459228ab8e9a15919b2e9eca9.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-936c8bacc3095c74008b4e54f44f2cc1.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+</head>
+
+<body class="nav-sidebar docked quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../chapters/10-benchmarks.html">Part IV — Evaluation &amp; Integration</a></li><li class="breadcrumb-item"><a href="../chapters/10-benchmarks.html"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Benchmarks</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="../">Agentic OCR in 2026</a> 
+        <div class="sidebar-tools-main tools-wide">
+    <a href="https://github.com/anujsadani/agentic-ocr" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+    <a href="../agentic-ocr-2026.pdf" title="Download PDF" class="quarto-navigation-tool px-1" aria-label="Download PDF"><i class="bi bi-file-pdf"></i></a>
+    <div class="dropdown">
+      <a href="" title="Share" id="quarto-navigation-tool-dropdown-0" class="quarto-navigation-tool dropdown-toggle px-1" data-bs-toggle="dropdown" aria-expanded="false" role="link" aria-label="Share"><i class="bi bi-share"></i></a>
+      <ul class="dropdown-menu" aria-labelledby="quarto-navigation-tool-dropdown-0">
+          <li>
+            <a class="dropdown-item sidebar-tools-main-item" href="https://twitter.com/intent/tweet?url=|url|">
+              <i class="bi bi-twitter pe-1"></i>
+            Twitter
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item sidebar-tools-main-item" href="https://www.linkedin.com/sharing/share-offsite/?url=|url|">
+              <i class="bi bi-linkedin pe-1"></i>
+            LinkedIn
+            </a>
+          </li>
+      </ul>
+    </div>
+</div>
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Preface</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part I — Foundations</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/01-introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction: The Agentic Turn</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/02-history.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">A Short History of Document Processing</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/03-what-it-is.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">What Agentic OCR Actually Is</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part II — Architecture</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/04-architecture.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Architecture Patterns</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/05-self-correction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Self-Correction: What It Means and What It Doesn’t</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/06-shift-left.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">The Shift-Left Thesis</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part III — The 2026 Landscape</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/07-commercial-players.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Commercial Players</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/08-opensource-players.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Open-Source Players</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/09-vendor-selection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Vendor Selection</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part IV — Evaluation &amp; Integration</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/10-benchmarks.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Benchmarks</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/11-evaluating-your-pipeline.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Evaluating Your Own Pipeline</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/12-rag.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">Agentic OCR and RAG</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part V — Reality Check</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/13-anti-patterns.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">Anti-Patterns and Misconceptions</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/14-limitations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">What Agentic OCR Doesn’t Solve</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/15-conclusion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">Conclusion: Where 2027 Goes</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text">Appendices</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../appendices/glossary.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">Glossary</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../appendices/bibliography.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Bibliography</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../appendices/cheatsheet.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">B</span>&nbsp; <span class="chapter-title">Quick-Reference Cheatsheet</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#why-benchmarks-matter-and-where-they-mislead" id="toc-why-benchmarks-matter-and-where-they-mislead" class="nav-link active" data-scroll-target="#why-benchmarks-matter-and-where-they-mislead"><span class="header-section-number">10.1</span> Why benchmarks matter — and where they mislead</a></li>
+  <li><a href="#the-2026-benchmark-catalog" id="toc-the-2026-benchmark-catalog" class="nav-link" data-scroll-target="#the-2026-benchmark-catalog"><span class="header-section-number">10.2</span> The 2026 benchmark catalog</a>
+  <ul class="collapse">
+  <li><a href="#parsebench-llamaindex-kaggle" id="toc-parsebench-llamaindex-kaggle" class="nav-link" data-scroll-target="#parsebench-llamaindex-kaggle"><span class="header-section-number">10.2.1</span> ParseBench (LlamaIndex + Kaggle)</a></li>
+  <li><a href="#ocrbench-v2" id="toc-ocrbench-v2" class="nav-link" data-scroll-target="#ocrbench-v2"><span class="header-section-number">10.2.2</span> OCRBench v2</a></li>
+  <li><a href="#olmocr-bench-allenai" id="toc-olmocr-bench-allenai" class="nav-link" data-scroll-target="#olmocr-bench-allenai"><span class="header-section-number">10.2.3</span> olmOCR-Bench (AllenAI)</a></li>
+  <li><a href="#omnidocbench-v1.7" id="toc-omnidocbench-v1.7" class="nav-link" data-scroll-target="#omnidocbench-v1.7"><span class="header-section-number">10.2.4</span> OmniDocBench v1.7</a></li>
+  <li><a href="#rd-tablebench-reducto" id="toc-rd-tablebench-reducto" class="nav-link" data-scroll-target="#rd-tablebench-reducto"><span class="header-section-number">10.2.5</span> RD-TableBench (Reducto)</a></li>
+  <li><a href="#dabstep-adyen-hugging-face" id="toc-dabstep-adyen-hugging-face" class="nav-link" data-scroll-target="#dabstep-adyen-hugging-face"><span class="header-section-number">10.2.6</span> DABstep (Adyen + Hugging Face)</a></li>
+  <li><a href="#score-bench-unstructured.io-new-in-2026" id="toc-score-bench-unstructured.io-new-in-2026" class="nav-link" data-scroll-target="#score-bench-unstructured.io-new-in-2026"><span class="header-section-number">10.2.7</span> SCORE-Bench (Unstructured.io) — new in 2026</a></li>
+  <li><a href="#officeqa-databricks-new-in-2026" id="toc-officeqa-databricks-new-in-2026" class="nav-link" data-scroll-target="#officeqa-databricks-new-in-2026"><span class="header-section-number">10.2.8</span> OfficeQA (Databricks) — new in 2026</a></li>
+  </ul></li>
+  <li><a href="#what-each-benchmark-actually-measures" id="toc-what-each-benchmark-actually-measures" class="nav-link" data-scroll-target="#what-each-benchmark-actually-measures"><span class="header-section-number">10.3</span> What each benchmark actually measures</a></li>
+  <li><a href="#what-benchmarks-miss" id="toc-what-benchmarks-miss" class="nav-link" data-scroll-target="#what-benchmarks-miss"><span class="header-section-number">10.4</span> What benchmarks miss</a></li>
+  <li><a href="#when-to-ignore-the-leaderboard" id="toc-when-to-ignore-the-leaderboard" class="nav-link" data-scroll-target="#when-to-ignore-the-leaderboard"><span class="header-section-number">10.5</span> When to ignore the leaderboard</a></li>
+  <li><a href="#a-note-on-benchmark-evolution-in-2027" id="toc-a-note-on-benchmark-evolution-in-2027" class="nav-link" data-scroll-target="#a-note-on-benchmark-evolution-in-2027"><span class="header-section-number">10.6</span> A note on benchmark evolution in 2027</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/anujsadani/agentic-ocr/edit/main/chapters/10-benchmarks.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/anujsadani/agentic-ocr/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../chapters/10-benchmarks.html">Part IV — Evaluation &amp; Integration</a></li><li class="breadcrumb-item"><a href="../chapters/10-benchmarks.html"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Benchmarks</span></a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title"><span id="sec-benchmarks" class="quarto-section-identifier"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Benchmarks</span></span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-simple callout-note callout-titled" title="Executive summary">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Executive summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>OmniDocBench has saturated.</strong> Top scores cluster within a percentage point. LlamaIndex’s own blog declared as much in mid-2026. If you are still picking vendors by OmniDocBench rank in late 2026, you are not paying attention.</li>
+<li>Use the public benchmarks as <strong>filters</strong> (eliminate the obviously worst), not as <strong>rankings</strong> (pick the best). The benchmark that actually predicts your production behavior is your golden set, evaluated on metrics that match your downstream cost (Chapter 11).</li>
+<li><strong>DABstep is the benchmark to watch.</strong> The top reasoning model scores about 14.55% on its hard tasks. The number is low enough to function as a permanent reality check on anyone selling magic, and it punctures the most common 2026 fallacy: that better parsing solves the long-form-reasoning problem.</li>
+<li>Vendor-published benchmarks (ParseBench, RD-TableBench, OfficeQA) are useful but biased toward the vendor’s strengths. Cross-validate; never let a single vendor’s leaderboard decide procurement.</li>
+</ul>
+</div>
+</div>
+<section id="why-benchmarks-matter-and-where-they-mislead" class="level2" data-number="10.1">
+<h2 data-number="10.1" class="anchored" data-anchor-id="why-benchmarks-matter-and-where-they-mislead"><span class="header-section-number">10.1</span> Why benchmarks matter — and where they mislead</h2>
+<p>Benchmarks are the field’s shared coordinate system. Without them, every claim about agentic OCR is a vendor anecdote. With them, the conversation has a substrate of public, reproducible numbers that buyers, builders, and researchers can argue over. That much is real progress, and the 2026 benchmark landscape is dramatically more useful than the 2024 landscape was.</p>
+<p>What benchmarks do not do — and what most procurement processes implicitly assume they do — is predict production behavior. A benchmark is a measurement of how a system performs on a specific distribution of documents under a specific evaluation rubric. Your production distribution is not the benchmark distribution. Your evaluation rubric is not the benchmark rubric. The benchmark score is a signal about the system’s general competence; it is not a forecast of how the system will handle your documents.</p>
+<p>Three failure modes are worth naming up front.</p>
+<p><strong>Benchmark saturation.</strong> When top scores cluster within a few percentage points, the benchmark stops discriminating between vendors. This has happened to OmniDocBench in 2026. It happens to every benchmark eventually. The right response is to treat saturated benchmarks as filters (eliminate the bottom of the field) rather than rankings (pick the top), and to seek out newer, harder benchmarks for discrimination among leaders.</p>
+<p><strong>Vendor publication bias.</strong> Benchmarks published by vendors are useful but selectively shaped. ParseBench is run by LlamaIndex; RD-TableBench by Reducto; OfficeQA by Databricks; SCORE-Bench by Unstructured.io. None of these are dishonest, and all of them are valuable signals. But each one is calibrated to the strengths of its publisher, and each one’s top vendor on its own leaderboard is, more often than not, the publisher. Take vendor-published rankings as one signal among many, not as the deciding answer.</p>
+<p><strong>Distribution mismatch.</strong> The most common production failure mode is a team that picks the highest-scoring vendor on a public benchmark and then watches their accuracy fall by five to ten percentage points on Day 1 in production. The vendor’s score was real; the production gap is real; the difference is that the benchmark and the production distribution were not the same. Chapter 11 deals with this in depth; the relevant point here is that no benchmark, however well-designed, predicts production behavior on a distribution it does not match.</p>
+</section>
+<section id="the-2026-benchmark-catalog" class="level2" data-number="10.2">
+<h2 data-number="10.2" class="anchored" data-anchor-id="the-2026-benchmark-catalog"><span class="header-section-number">10.2</span> The 2026 benchmark catalog</h2>
+<p>The benchmarks worth knowing about in 2026, ranked by current usefulness for vendor selection:</p>
+<section id="parsebench-llamaindex-kaggle" class="level3" data-number="10.2.1">
+<h3 data-number="10.2.1" class="anchored" data-anchor-id="parsebench-llamaindex-kaggle"><span class="header-section-number">10.2.1</span> ParseBench (LlamaIndex + Kaggle)</h3>
+<p>Approximately 2,000 human-verified pages and 167,000 test rules across five evaluation axes: tables, charts, content fidelity, formatting, and visual grounding <span class="citation" data-cites="parsebench2026">(<a href="../appendices/bibliography.html#ref-parsebench2026" role="doc-biblioref">LlamaIndex and Kaggle 2026</a>)</span>. Targets high-stakes enterprise use cases — insurance claims, financial filings, healthcare records — where small parsing errors materially affect downstream decisions.</p>
+<p>The live leaderboard at parsebench.ai is the most-cited 2026 reference for end-to-end agentic-OCR vendor comparison. As of mid-2026, the top result is <strong>LlamaParse Agentic at 84.9% overall</strong>, at approximately $0.012 per page. The leaderboard includes 14 methods spanning vision-language models, specialized document parsers, and the various LlamaParse tiers.</p>
+<p>Use it for: getting a broad sense of where vendors sit in the commercial-agentic landscape, comparing pricing-vs-accuracy tradeoffs across tiers, and tracking the field’s overall accuracy frontier.</p>
+<p>Caveat: published by LlamaIndex. The rule selection inevitably shapes which behaviors the benchmark rewards. LlamaParse’s lead on its own benchmark is a useful data point, not a definitive ranking. Cross-check on OmniDocBench, olmOCR-Bench, or your own golden set before letting ParseBench drive a procurement decision.</p>
+</section>
+<section id="ocrbench-v2" class="level3" data-number="10.2.2">
+<h3 data-number="10.2.2" class="anchored" data-anchor-id="ocrbench-v2"><span class="header-section-number">10.2.2</span> OCRBench v2</h3>
+<p>Approximately 10,000+ QA pairs, bilingual English plus Chinese. Tests text recognition, layout understanding, and visual question-answering. Useful when your workload has heavy Chinese-language content; less useful when your production contract is structured extraction rather than visual text reasoning.</p>
+<p>OCRBench v2 is the benchmark to track if you are choosing between models for a bilingual or Chinese-heavy deployment. For English-only or English-dominant workloads, olmOCR-Bench is a sharper signal.</p>
+</section>
+<section id="olmocr-bench-allenai" class="level3" data-number="10.2.3">
+<h3 data-number="10.2.3" class="anchored" data-anchor-id="olmocr-bench-allenai"><span class="header-section-number">10.2.3</span> olmOCR-Bench (AllenAI)</h3>
+<p>The most rigorously engineered benchmark in the open-source ecosystem. Approximately 7,000+ test cases across 1,400 documents, with a unit-test-style evaluation approach: each test verifies a specific property (table cell relationships, reading order, field-level extraction correctness) rather than producing a single aggregate score <span class="citation" data-cites="olmocrbench2025">(<a href="../appendices/bibliography.html#ref-olmocrbench2025" role="doc-biblioref">AllenAI 2025</a>)</span>.</p>
+<p>English-only. Annotations generated by closed-source VLMs (a known but transparent limitation; the AllenAI team has been candid about it). The current top scores as of mid-2026:</p>
+<ul>
+<li><strong>Chandra (9B, OpenRAIL):</strong> 83.1 ± 0.9</li>
+<li><strong>OlmOCR-2 (8B, Apache-2.0):</strong> 82.3 ± 1.1</li>
+<li><strong>dots.ocr (3B):</strong> 79.1 ± 1.0</li>
+<li><strong>DeepSeek-OCR (3B):</strong> 75.4 ± 1.0</li>
+</ul>
+<p>Use it for: open-source model comparison, regression testing as you iterate on prompts or fine-tune models, and as a reproducible benchmark you can re-run on your own infrastructure. The unit-test structure makes it the easiest of the major benchmarks to incorporate into a CI pipeline.</p>
+<p>Caveat: English-only. Annotations from closed-source VLMs introduce a slight bias toward those VLMs’ interpretations.</p>
+</section>
+<section id="omnidocbench-v1.7" class="level3" data-number="10.2.4">
+<h3 data-number="10.2.4" class="anchored" data-anchor-id="omnidocbench-v1.7"><span class="header-section-number">10.2.4</span> OmniDocBench v1.7</h3>
+<p>1,651 pages plus a new 296-page hard subset added in April 2026. Covers 10 document types, 5 layout types, and 5 languages. Evaluates layout, formulas, tables, HTML/LaTeX rendering, and reading order <span class="citation" data-cites="omnidocbench">(<a href="../appendices/bibliography.html#ref-omnidocbench" role="doc-biblioref">OpenDataLab 2025</a>)</span>.</p>
+<p><strong>OmniDocBench has saturated.</strong> This is the most important fact about it. The top of the leaderboard clusters within a percentage point or two; the discriminating signal that the benchmark provided in 2024–2025 has compressed. LlamaIndex published an explicit post titled “OmniDocBench is saturated, what’s next for OCR benchmarks?” in mid-2026, which is a useful read for understanding the field’s view of where benchmark evolution needs to go next.</p>
+<p>The 296-page hard subset added in April 2026 partially addresses saturation by introducing more difficult formulas, tables, and layouts. Top scores on the hard subset still discriminate meaningfully. If you are using OmniDocBench in 2026, use the hard subset rather than the full leaderboard.</p>
+<p>PP-StructureV3’s result on OmniDocBench — edit distance 0.145 on English documents and 0.206 on Chinese documents, at under 100M parameters — remains the cleanest data point in the benchmark’s history. The story is not “PP-StructureV3 is the best model on OmniDocBench”; the story is “a sub-100M-parameter specialized model matches Gemini-2.5-Pro’s accuracy, which means scale is not the variable that matters here.”</p>
+<p>Use it for: cross-validation against vendor-published benchmarks, multilingual evaluation (limited but present), and the historical record of how the field has progressed.</p>
+<p>Caveat: saturated at the top; use the hard subset for discrimination.</p>
+</section>
+<section id="rd-tablebench-reducto" class="level3" data-number="10.2.5">
+<h3 data-number="10.2.5" class="anchored" data-anchor-id="rd-tablebench-reducto"><span class="header-section-number">10.2.5</span> RD-TableBench (Reducto)</h3>
+<p>1,000 adversarial tables, PhD-annotated, evaluated using Needleman-Wunsch alignment for table-cell matching <span class="citation" data-cites="rdtablebench">(<a href="../appendices/bibliography.html#ref-rdtablebench" role="doc-biblioref">Reducto AI 2025</a>)</span>. The most demanding public benchmark specifically for table extraction.</p>
+<p>Top result: <strong>Reducto at approximately 0.90 cell-alignment similarity</strong>, approximately 20 percentage points ahead of the hyperscaler APIs. The gap is real and reproducible.</p>
+<p>Use it for: evaluating any system whose workload involves complex tables (financial filings, scientific papers, regulatory documents, invoices with nested line items). RD-TableBench’s adversarial nature — the tables are explicitly chosen to be hard — makes it a sharper signal of real-world table handling than general benchmarks.</p>
+<p>Caveat: published by Reducto, with Reducto at the top of the leaderboard. The pattern repeats across vendor-published benchmarks; treat the leadership as one signal, cross-validate before deciding.</p>
+</section>
+<section id="dabstep-adyen-hugging-face" class="level3" data-number="10.2.6">
+<h3 data-number="10.2.6" class="anchored" data-anchor-id="dabstep-adyen-hugging-face"><span class="header-section-number">10.2.6</span> DABstep (Adyen + Hugging Face)</h3>
+<p>The most important 2026 benchmark, and the one most likely to be ignored by procurement processes that should be paying attention.</p>
+<p>450+ real-world data-analysis tasks pulled from Adyen’s operational workloads <span class="citation" data-cites="dabstep2025">(<a href="../appendices/bibliography.html#ref-dabstep2025" role="doc-biblioref">Adyen and Hugging Face 2025</a>)</span>. Mixes structured (CSV, JSON) and unstructured (text, manuals, internal documentation) data. Requires agents to demonstrate multi-step reasoning — extraction is necessary but not sufficient.</p>
+<p><strong>Top score: approximately 14.55% on hard tasks. The best-performing model (o4-mini with reasoning prompting) scores 14.55%; the overall best-in-class on the full benchmark is around 16%.</strong></p>
+<p>That ceiling is low enough to be the field’s most useful reality check. The story DABstep tells: <strong>frontier reasoning models, given parsed data and tools, fail roughly 85% of multi-step analysis tasks</strong>. The framing that the field has unlocked complex document understanding is contradicted by this number more thoroughly than by any other 2026 result.</p>
+<p>DABstep is the benchmark to cite when arguing that: - Extraction and reasoning are separate problems, and solving one does not solve the other. - “Better OCR will fix our agent” is sometimes a $500k mistake (Chapter 12 returns to this). - The field has more headroom for improvement than the saturated parsing benchmarks suggest.</p>
+<p>Use it for: forecasting where agentic-OCR-plus-reasoning systems will struggle, evaluating any system that claims to handle multi-document or multi-step workloads, and as a permanent humility check.</p>
+<p>Caveat: small N (450 tasks); narrow distribution (Adyen’s operational workloads). The ceiling is real; the specific number may move as models improve.</p>
+</section>
+<section id="score-bench-unstructured.io-new-in-2026" class="level3" data-number="10.2.7">
+<h3 data-number="10.2.7" class="anchored" data-anchor-id="score-bench-unstructured.io-new-in-2026"><span class="header-section-number">10.2.7</span> SCORE-Bench (Unstructured.io) — new in 2026</h3>
+<p>1,000+ page enterprise dataset spanning scanned invoices, nested tables, handwritten notes, schematics, patents, marketing collateral <span class="citation" data-cites="scorebench2026">(<a href="../appendices/bibliography.html#ref-scorebench2026" role="doc-biblioref">Unstructured.io 2026</a>)</span>. Built specifically for generative parsing systems with an evaluation framework that separates legitimate representational diversity (two valid ways to represent the same content) from actual extraction errors.</p>
+<p>SCORE = Structural and Content Robust Evaluation. The interpretation-agnostic design is the most novel aspect: traditional benchmarks penalize models that emit a structurally valid output that differs from the reference (a Markdown table vs.&nbsp;an HTML table containing the same content, for instance). SCORE accepts equivalent representations and only penalizes actual extraction errors.</p>
+<p>The benchmark is new and worth watching. As of mid-2026 it has been used to compare Reducto, LlamaParse, Docling, Snowflake, Databricks, and NVIDIA — a useful set of cross-vendor comparisons that did not exist before. The methodological contribution may end up being more important than the leaderboard.</p>
+<p>Use it for: cross-vendor parsing comparisons, especially for downstream use cases where the parsed output feeds a generative model (RAG, agentic workflows) and representational flexibility is acceptable.</p>
+<p>Caveat: published by Unstructured.io; new enough that the field has not converged on how seriously to take it. Worth tracking.</p>
+</section>
+<section id="officeqa-databricks-new-in-2026" class="level3" data-number="10.2.8">
+<h3 data-number="10.2.8" class="anchored" data-anchor-id="officeqa-databricks-new-in-2026"><span class="header-section-number">10.2.8</span> OfficeQA (Databricks) — new in 2026</h3>
+<p>Enterprise document-workflow reasoning tasks. The benchmark on which Databricks reported their <strong>16% across-the-board agent-performance gain</strong> when <code>ai_parse_document</code> was inserted upstream of the reasoning step (Chapter 6).</p>
+<p>The headline number on OfficeQA itself: <strong>frontier agents score below 50% accuracy</strong> on document-reasoning tasks without good upstream parsing. Add good parsing and the average improves by 16 percentage points across every agent framework tested.</p>
+<p>The benchmark’s methodology and dataset are described in arXiv 2603.08655. The numbers are vendor-published (Databricks), with the appropriate caveats, but the directional finding — that reading is the ceiling on agent quality — is robust across the wider 2026 literature.</p>
+<p>Use it for: framing the shift-left thesis in vendor pitches and internal architecture discussions, citing the 16% number as the cleanest piece of evidence for upstream parsing as an agent-quality lever.</p>
+<p>Caveat: new benchmark, Databricks-maintained, used primarily to demonstrate the value of Databricks Document Intelligence. The thesis the benchmark supports is broader than the vendor’s product.</p>
+</section>
+</section>
+<section id="what-each-benchmark-actually-measures" class="level2" data-number="10.3">
+<h2 data-number="10.3" class="anchored" data-anchor-id="what-each-benchmark-actually-measures"><span class="header-section-number">10.3</span> What each benchmark actually measures</h2>
+<p>The data in <code>data/benchmarks.csv</code> consolidates the per-benchmark details. The compressed cross-comparison:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Benchmark</th>
+<th>Year</th>
+<th>Scope</th>
+<th>Top score</th>
+<th>Top vendor / model</th>
+<th>Best use</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ParseBench</td>
+<td>2026</td>
+<td>End-to-end agentic parsing</td>
+<td>84.9%</td>
+<td>LlamaParse Agentic</td>
+<td>Commercial vendor comparison</td>
+</tr>
+<tr class="even">
+<td>OCRBench v2</td>
+<td>2025</td>
+<td>Text + layout + QA (EN+ZH)</td>
+<td>—</td>
+<td>Varies</td>
+<td>Bilingual workloads</td>
+</tr>
+<tr class="odd">
+<td>olmOCR-Bench</td>
+<td>2025</td>
+<td>Open-source unit tests (EN)</td>
+<td>83.1</td>
+<td>Chandra (9B)</td>
+<td>Open-source regression</td>
+</tr>
+<tr class="even">
+<td>OmniDocBench v1.7</td>
+<td>2026</td>
+<td>Diverse docs, multilingual</td>
+<td>Saturated</td>
+<td>Cluster within 1pp</td>
+<td>Cross-validation; use hard subset</td>
+</tr>
+<tr class="odd">
+<td>RD-TableBench</td>
+<td>2025</td>
+<td>Adversarial tables</td>
+<td>~0.90</td>
+<td>Reducto</td>
+<td>Table extraction</td>
+</tr>
+<tr class="even">
+<td>DABstep</td>
+<td>2025</td>
+<td>Multi-step reasoning</td>
+<td>~14.55%</td>
+<td>o4-mini</td>
+<td>Reasoning ceiling check</td>
+</tr>
+<tr class="odd">
+<td>SCORE-Bench</td>
+<td>2026</td>
+<td>Generative-parser eval</td>
+<td>—</td>
+<td>Varies</td>
+<td>Cross-vendor representational fairness</td>
+</tr>
+<tr class="even">
+<td>OfficeQA</td>
+<td>2026</td>
+<td>Doc-reasoning workflows</td>
+<td>&lt;50% (without parsing)</td>
+<td>—</td>
+<td>Shift-left thesis evidence</td>
+</tr>
+</tbody>
+</table>
+<p>The compressed reading: ParseBench and olmOCR-Bench for vendor and model selection respectively; RD-TableBench for table-heavy workloads; OmniDocBench’s hard subset for cross-validation; DABstep for humility; SCORE-Bench and OfficeQA for new-methodology signals worth tracking.</p>
+</section>
+<section id="what-benchmarks-miss" class="level2" data-number="10.4">
+<h2 data-number="10.4" class="anchored" data-anchor-id="what-benchmarks-miss"><span class="header-section-number">10.4</span> What benchmarks miss</h2>
+<p>Benchmarks are useful precisely because they constrain what they measure. The constraint is also their limitation. Five things are systematically under-measured in the 2026 public benchmark landscape:</p>
+<p><strong>Latency.</strong> Most benchmarks score accuracy and ignore wall-clock time. Production deployments care a great deal about latency, especially for interactive use cases. A vendor with 2% higher accuracy and 10× higher latency is not better than the alternative for many real workloads. Track latency in your own evaluation; do not let benchmark scores conceal it.</p>
+<p><strong>Cost-per-correct-output.</strong> Benchmarks report accuracy <em>or</em> cost separately, rarely jointly. The number that predicts your monthly bill is cost-per-correct-extraction-with-provenance, not accuracy. The combination is workload-specific and is not in any public benchmark.</p>
+<p><strong>Long-form reasoning.</strong> DABstep is the only public benchmark that meaningfully tests this, and its ceiling is ~14.55%. Most agentic-OCR systems sold for “intelligent document understanding” have never been benchmarked on long-form reasoning at all. The gap between extraction accuracy and downstream-task accuracy is real and large; benchmarks that elide it produce false confidence.</p>
+<p><strong>HITL acceptance rate.</strong> No public benchmark measures the metric that matters most in production — the rate at which human reviewers accept the system’s extractions versus the rate at which they correct them. This is a production-only metric, and the absence from public benchmarks is one of the deeper structural gaps in the 2026 evaluation landscape.</p>
+<p><strong>Domain shift.</strong> Every benchmark has a distribution. Your production distribution is different. The gap between benchmark performance and your production performance is workload-specific, and no benchmark, however well-designed, predicts it. The only honest answer is to evaluate on your own data.</p>
+</section>
+<section id="when-to-ignore-the-leaderboard" class="level2" data-number="10.5">
+<h2 data-number="10.5" class="anchored" data-anchor-id="when-to-ignore-the-leaderboard"><span class="header-section-number">10.5</span> When to ignore the leaderboard</h2>
+<p>A few specific situations where the right answer is “stop reading the leaderboard”:</p>
+<ul>
+<li><strong>When the top 5 cluster within 1–2 percentage points</strong> on a metric your team does not directly care about. This is OmniDocBench in mid-2026 — the discrimination has compressed to inside the benchmark’s own measurement noise.</li>
+<li><strong>When the benchmark is published by the vendor whose model leads it</strong>, and you have not yet cross-validated on a non-vendor benchmark. Vendor leaderships on vendor benchmarks are real but biased. One vendor benchmark is a signal; three independent benchmarks plus your golden set is a decision.</li>
+<li><strong>When the benchmark has not been updated in 12+ months.</strong> OCR benchmark leaderboards have a short half-life. A 2023 benchmark in 2026 is documenting a different problem than the one you have.</li>
+<li><strong>When your golden set says something different.</strong> Your golden set wins. Always. The benchmark may say Vendor A scores 84%; your golden set may say Vendor A scores 71%. The 71% is the number that matters. The benchmark documented a behavior on a distribution that is not yours.</li>
+</ul>
+<p>The last point is the strongest. Public benchmarks are valuable as a shared coordinate system for the field. They are not a substitute for measuring on your own data. Teams that internalize this run vendor selection well; teams that do not get burned with predictable regularity.</p>
+</section>
+<section id="a-note-on-benchmark-evolution-in-2027" class="level2" data-number="10.6">
+<h2 data-number="10.6" class="anchored" data-anchor-id="a-note-on-benchmark-evolution-in-2027"><span class="header-section-number">10.6</span> A note on benchmark evolution in 2027</h2>
+<p>The 2026 benchmark landscape will look different in 2027. Three predictions worth flagging:</p>
+<ul>
+<li><strong>OmniDocBench will be deprecated or replaced</strong> as its saturation deepens. SCORE-Bench is the leading candidate to replace it; a new benchmark from a research group not yet active in 2026 is also plausible.</li>
+<li><strong>A long-form reasoning benchmark will overtake DABstep in attention</strong> as the parsing-quality benchmarks saturate. DABstep is the leading edge of this transition; the next benchmark will likely combine multi-document parsing with multi-step reasoning at greater scale.</li>
+<li><strong>Cost-aware benchmarks will appear.</strong> No 2026 benchmark integrates accuracy and cost into a single metric. Some research group will publish one in 2027, and it will be more useful for procurement than any of the accuracy-only leaderboards currently in circulation.</li>
+</ul>
+<p>These are predictions, not promises. Track the space; do not assume the 2026 benchmark set is the permanent set.</p>
+<div class="callout callout-style-simple callout-tip callout-titled" title="Named takes">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Named takes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><em>OmniDocBench told us a year ago what works. It can’t tell us anymore. If you’re still picking vendors by their OmniDocBench number in late 2026, you’re not paying attention.</em></p>
+<p><em>DABstep is the only benchmark whose top score embarrasses the field. It is therefore the benchmark to watch.</em></p>
+<p><em>Your golden set wins. Every public benchmark documents a distribution that is not yours. Treat them as filters, not rankings.</em></p>
+</div>
+</div>
+
+
+<div id="refs" class="references csl-bib-body hanging-indent" role="list" style="display: none">
+<div id="ref-dabstep2025" class="csl-entry" role="listitem">
+Adyen, and Hugging Face. 2025. <span>“<span>DABstep</span>: Data Agent Benchmark for Multi-Step Reasoning.”</span> <em>arXiv Preprint</em>. <a href="https://arxiv.org/abs/2506.23719">https://arxiv.org/abs/2506.23719</a>.
+</div>
+<div id="ref-olmocrbench2025" class="csl-entry" role="listitem">
+AllenAI. 2025. <em>olmOCR-Bench: A Programmatic Benchmark for OCR Systems</em>. AllenAI / Hugging Face. <a href="https://github.com/allenai/olmocr">https://github.com/allenai/olmocr</a>.
+</div>
+<div id="ref-parsebench2026" class="csl-entry" role="listitem">
+LlamaIndex, and Kaggle. 2026. <em>ParseBench: A Document Parsing Benchmark for AI Agents</em>. LlamaIndex Blog. <a href="https://www.llamaindex.ai/blog/parsebench">https://www.llamaindex.ai/blog/parsebench</a>.
+</div>
+<div id="ref-omnidocbench" class="csl-entry" role="listitem">
+OpenDataLab. 2025. <em><span>OmniDocBench</span>: A Comprehensive Benchmark for Document Parsing and Evaluation</em>. CVPR 2025; updated v1.7 April 2026. <a href="https://github.com/opendatalab/OmniDocBench">https://github.com/opendatalab/OmniDocBench</a>.
+</div>
+<div id="ref-rdtablebench" class="csl-entry" role="listitem">
+Reducto AI. 2025. <em>Announcing RD-TableBench: An Open-Source Table Benchmark</em>. Reducto Blog. <a href="https://reducto.ai/blog/rd-tablebench">https://reducto.ai/blog/rd-tablebench</a>.
+</div>
+<div id="ref-scorebench2026" class="csl-entry" role="listitem">
+Unstructured.io. 2026. <em>Introducing <span>SCORE-Bench</span>: An Open Document Parsing Benchmark</em>. Unstructured.io Blog. <a href="https://unstructured.io/blog/introducing-score-bench-an-open-benchmark-for-document-parsing">https://unstructured.io/blog/introducing-score-bench-an-open-benchmark-for-document-parsing</a>.
+</div>
+</div>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../chapters/09-vendor-selection.html" class="pagination-link" aria-label="Vendor Selection">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Vendor Selection</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../chapters/11-evaluating-your-pipeline.html" class="pagination-link" aria-label="Evaluating Your Own Pipeline">
+        <span class="nav-page-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Evaluating Your Own Pipeline</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/anujsadani/agentic-ocr/edit/main/chapters/10-benchmarks.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/anujsadani/agentic-ocr/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>

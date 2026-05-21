@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>11&nbsp; Evaluating Your Own Pipeline – Agentic OCR in 2026</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../chapters/12-rag.html" rel="next">
+<link href="../chapters/10-benchmarks.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-fd4ce07459228ab8e9a15919b2e9eca9.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-936c8bacc3095c74008b4e54f44f2cc1.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-sidebar docked quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../chapters/10-benchmarks.html">Part IV — Evaluation &amp; Integration</a></li><li class="breadcrumb-item"><a href="../chapters/11-evaluating-your-pipeline.html"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Evaluating Your Own Pipeline</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="../">Agentic OCR in 2026</a> 
+        <div class="sidebar-tools-main tools-wide">
+    <a href="https://github.com/anujsadani/agentic-ocr" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+    <a href="../agentic-ocr-2026.pdf" title="Download PDF" class="quarto-navigation-tool px-1" aria-label="Download PDF"><i class="bi bi-file-pdf"></i></a>
+    <div class="dropdown">
+      <a href="" title="Share" id="quarto-navigation-tool-dropdown-0" class="quarto-navigation-tool dropdown-toggle px-1" data-bs-toggle="dropdown" aria-expanded="false" role="link" aria-label="Share"><i class="bi bi-share"></i></a>
+      <ul class="dropdown-menu" aria-labelledby="quarto-navigation-tool-dropdown-0">
+          <li>
+            <a class="dropdown-item sidebar-tools-main-item" href="https://twitter.com/intent/tweet?url=|url|">
+              <i class="bi bi-twitter pe-1"></i>
+            Twitter
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item sidebar-tools-main-item" href="https://www.linkedin.com/sharing/share-offsite/?url=|url|">
+              <i class="bi bi-linkedin pe-1"></i>
+            LinkedIn
+            </a>
+          </li>
+      </ul>
+    </div>
+</div>
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Preface</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part I — Foundations</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/01-introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction: The Agentic Turn</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/02-history.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">A Short History of Document Processing</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/03-what-it-is.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">What Agentic OCR Actually Is</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part II — Architecture</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/04-architecture.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Architecture Patterns</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/05-self-correction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Self-Correction: What It Means and What It Doesn’t</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/06-shift-left.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">The Shift-Left Thesis</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part III — The 2026 Landscape</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/07-commercial-players.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Commercial Players</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/08-opensource-players.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Open-Source Players</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/09-vendor-selection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Vendor Selection</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part IV — Evaluation &amp; Integration</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/10-benchmarks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Benchmarks</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/11-evaluating-your-pipeline.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Evaluating Your Own Pipeline</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/12-rag.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">Agentic OCR and RAG</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part V — Reality Check</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/13-anti-patterns.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">Anti-Patterns and Misconceptions</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/14-limitations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">What Agentic OCR Doesn’t Solve</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/15-conclusion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">Conclusion: Where 2027 Goes</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text">Appendices</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../appendices/glossary.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">Glossary</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../appendices/bibliography.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Bibliography</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../appendices/cheatsheet.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">B</span>&nbsp; <span class="chapter-title">Quick-Reference Cheatsheet</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#why-the-public-benchmarks-wont-save-you" id="toc-why-the-public-benchmarks-wont-save-you" class="nav-link active" data-scroll-target="#why-the-public-benchmarks-wont-save-you"><span class="header-section-number">11.1</span> Why the public benchmarks won’t save you</a></li>
+  <li><a href="#golden-sets-the-only-thing-that-matters" id="toc-golden-sets-the-only-thing-that-matters" class="nav-link" data-scroll-target="#golden-sets-the-only-thing-that-matters"><span class="header-section-number">11.2</span> Golden sets — the only thing that matters</a></li>
+  <li><a href="#metric-selection-per-domain" id="toc-metric-selection-per-domain" class="nav-link" data-scroll-target="#metric-selection-per-domain"><span class="header-section-number">11.3</span> Metric selection per domain</a></li>
+  <li><a href="#regression-testing" id="toc-regression-testing" class="nav-link" data-scroll-target="#regression-testing"><span class="header-section-number">11.4</span> Regression testing</a></li>
+  <li><a href="#hitl-feedback-loops" id="toc-hitl-feedback-loops" class="nav-link" data-scroll-target="#hitl-feedback-loops"><span class="header-section-number">11.5</span> HITL feedback loops</a></li>
+  <li><a href="#grounding-and-auditability-for-compliance" id="toc-grounding-and-auditability-for-compliance" class="nav-link" data-scroll-target="#grounding-and-auditability-for-compliance"><span class="header-section-number">11.6</span> Grounding and auditability for compliance</a></li>
+  <li><a href="#cost-aware-evaluation" id="toc-cost-aware-evaluation" class="nav-link" data-scroll-target="#cost-aware-evaluation"><span class="header-section-number">11.7</span> Cost-aware evaluation</a></li>
+  <li><a href="#when-your-eval-is-the-bottleneck" id="toc-when-your-eval-is-the-bottleneck" class="nav-link" data-scroll-target="#when-your-eval-is-the-bottleneck"><span class="header-section-number">11.8</span> When your eval is the bottleneck</a></li>
+  <li><a href="#what-good-eval-looks-like-in-production" id="toc-what-good-eval-looks-like-in-production" class="nav-link" data-scroll-target="#what-good-eval-looks-like-in-production"><span class="header-section-number">11.9</span> What good eval looks like in production</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/anujsadani/agentic-ocr/edit/main/chapters/11-evaluating-your-pipeline.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/anujsadani/agentic-ocr/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../chapters/10-benchmarks.html">Part IV — Evaluation &amp; Integration</a></li><li class="breadcrumb-item"><a href="../chapters/11-evaluating-your-pipeline.html"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Evaluating Your Own Pipeline</span></a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title"><span id="sec-evaluating-pipeline" class="quarto-section-identifier"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Evaluating Your Own Pipeline</span></span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-simple callout-note callout-titled" title="Executive summary">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Executive summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>The single most important investment in agentic OCR is a <strong>golden set</strong> of 200–500 hand-labeled documents drawn from your actual production traffic. Build it before you choose a vendor. Teams that skip this step pick the wrong vendor with predictable regularity.</li>
+<li><strong>Metric selection is domain-dependent.</strong> Character Error Rate is wrong for structured extraction. Field-level F1 is the default. Table-cell accuracy needs alignment (Needleman-Wunsch), not Jaccard. Schema-validity rate is cheap and surprisingly diagnostic. Pick the metric that predicts your downstream cost.</li>
+<li>The HITL queue is <strong>part of your eval</strong>, not a fallback bolted on the side. Reviewer accept/correct rates are the most honest production-accuracy signal you will get, and most teams underutilize them.</li>
+<li>The number that predicts your monthly bill is <strong>cost-per-correct-extraction-with-provenance</strong>. It is computable from three measured numbers (API cost, accuracy, HITL escalation rate × HITL cost). It is the answer; the rest is mostly noise.</li>
+</ul>
+</div>
+</div>
+<section id="why-the-public-benchmarks-wont-save-you" class="level2" data-number="11.1">
+<h2 data-number="11.1" class="anchored" data-anchor-id="why-the-public-benchmarks-wont-save-you"><span class="header-section-number">11.1</span> Why the public benchmarks won’t save you</h2>
+<p>A common 2026 procurement story: a team picks the highest-scoring vendor on ParseBench, deploys to production, and watches accuracy fall by 5–10 percentage points on Day 1. The benchmark score was real. The production gap is real. The difference is that ParseBench’s distribution and the team’s production distribution are not the same.</p>
+<p>This is not a problem with ParseBench. The benchmark is well-designed for what it does, and what it does — measure end-to-end agentic-parsing quality on a curated set of high-stakes enterprise documents — is genuinely useful. The mistake is treating any public benchmark as a forecast of your production behavior. No public benchmark, however well-designed, predicts your performance on documents the benchmark has never seen.</p>
+<p>The discipline that closes the gap is straightforward to describe and operationally rare to execute. Build a golden set. Measure the right metrics. Run regression tests. Treat HITL as part of the eval. Compute the cost-per-correct-extraction number. Repeat quarterly.</p>
+<p>This chapter walks each of those steps. Most of it is not new — every team operating agentic OCR in production has run into these requirements eventually. The hope of this chapter is that you hit them deliberately rather than after the third production incident that the public benchmarks did not predict.</p>
+</section>
+<section id="golden-sets-the-only-thing-that-matters" class="level2" data-number="11.2">
+<h2 data-number="11.2" class="anchored" data-anchor-id="golden-sets-the-only-thing-that-matters"><span class="header-section-number">11.2</span> Golden sets — the only thing that matters</h2>
+<p>A golden set is a collection of hand-labeled documents from your production traffic, against which every parsing decision is evaluated. Its purpose is to give you a measurement that <em>does</em> predict your production behavior, because it <em>is</em> your production behavior — sampled, labeled, and made into a stable evaluation target.</p>
+<p>The discipline has four parts:</p>
+<p><strong>Selection.</strong> Pull 200–500 documents from your actual production traffic. Stratify by document type, source vendor, and difficulty. Include the edge cases your team complains about most loudly — the ones that the system gets wrong consistently — not the easy cases your current pipeline already handles. The temptation to over-represent clean documents because they are faster to label is the most common golden-set construction error.</p>
+<p><strong>Labeling.</strong> Hand-label each document with the schema your downstream consumers actually use. Field by field. Not the schema in a vendor’s documentation — your schema, the one your downstream system expects. Label the cases the system finds ambiguous: missing fields, illegible regions, contested values. The labels embed the team’s judgment about correctness, and that judgment is the load-bearing artifact.</p>
+<p><strong>Provenance metadata.</strong> For each labeled field, capture the source region (page number, bounding box) where the value originated. This makes the golden set usable not just for accuracy measurement but for <strong>grounding accuracy</strong> measurement — does the vendor’s reported source region match the actual region. Grounding measurement is a separate axis, and the golden set is the only place you can measure it reliably.</p>
+<p><strong>Maintenance.</strong> Add 50 new documents per quarter, drawn from recent production. Retire documents that have become unrepresentative (vendors that no longer exist, document types that no longer appear). The golden set is a living artifact, not a one-time project. Teams that label once and never update produce evaluations that predict behavior on the 2024 distribution while their production distribution moved on.</p>
+<p>The labor cost is real. A 200-document golden set with thorough labeling and provenance metadata typically takes one to three weeks of focused effort by a labeler who understands the domain. The labor cost is also small relative to the cost of picking the wrong vendor. Teams that resist building a golden set on cost grounds routinely spend ten times the labor cost on a wrong-vendor rollback six months later.</p>
+<p>A specific recommendation worth highlighting: <strong>label the golden set with the same people who will be operating the HITL queue.</strong> Their judgment about what constitutes a correct extraction is the judgment that will govern the production system. Labels from a separate “evaluation team” drift away from operational reality and produce eval scores that do not match what the HITL reviewers find in practice.</p>
+</section>
+<section id="metric-selection-per-domain" class="level2" data-number="11.3">
+<h2 data-number="11.3" class="anchored" data-anchor-id="metric-selection-per-domain"><span class="header-section-number">11.3</span> Metric selection per domain</h2>
+<p>The wrong metric quietly destroys vendor selection. The choice of metric needs to match the downstream cost of an error, and the right choice varies by workload type.</p>
+<p><strong>Character Error Rate (CER).</strong> The metric that classic OCR has used for thirty years. Correct for plain-text OCR — does the system get the characters right. Wrong for structured extraction — penalizes formatting differences that do not matter (extra whitespace, equivalent date formats, capitalization variants on enum values) and under-penalizes structural errors (a wrong field value in a correctly-extracted character stream).</p>
+<p>CER is the right metric for: scanning books, indexing email attachments, accessibility-focused OCR. It is the wrong metric for most agentic-OCR workloads.</p>
+<p><strong>Field-level F1.</strong> The default metric for structured extraction. Per-field precision (of the fields the system extracted, what fraction match the golden label) and recall (of the fields in the golden label, what fraction did the system extract). F1 is the harmonic mean.</p>
+<p>Field-level F1 is the right metric for: invoices, forms, contracts, claims, KYC documents, any workload where the output is a fixed-schema JSON object. The right granularity is per-field, not aggregate: per-field F1 tells you which specific fields the system handles well and which it struggles with, which is operationally diagnostic. Aggregate F1 averages across fields and hides the variance.</p>
+<p><strong>Table-cell accuracy with alignment.</strong> Tables need their own metric. Jaccard similarity on the set of cell values is wrong because it does not respect cell position — a system that gets every cell value right but in the wrong row and column scores perfectly on Jaccard and is, in fact, useless.</p>
+<p>The right alignment metrics are <strong>Needleman-Wunsch</strong> (used in RD-TableBench <span class="citation" data-cites="rdtablebench">(<a href="../appendices/bibliography.html#ref-rdtablebench" role="doc-biblioref">Reducto AI 2025</a>)</span>) or <strong>Hungarian assignment</strong>, both of which match predicted cells to ground-truth cells with positional constraints and penalize misalignments. The exact choice between Needleman-Wunsch and Hungarian depends on whether row/column order matters more (Hungarian) or whether sequence alignment is the right model (Needleman-Wunsch). For most enterprise tables, Hungarian is the safer default.</p>
+<p><strong>Schema-validity rate.</strong> Cheap, deterministic, and surprisingly diagnostic. Does the system’s output parse as your downstream schema? Are required fields present? Are dates in valid ranges? Are enums populated with allowed values?</p>
+<p>Many extraction errors that confidence checks miss show up as schema failures. A system with 95% field-level F1 and 80% schema-validity rate is producing per-field correct outputs that aggregate into structurally invalid documents — a pattern you want to catch in eval, not in production.</p>
+<p><strong>Grounding accuracy.</strong> For compliance workloads, does the vendor’s reported source region for a field actually contain the extracted value? Measured as the IoU (intersection over union) between predicted and ground-truth bounding boxes, or as a binary “does the predicted region contain the value” check.</p>
+<p>Without grounding accuracy, you cannot audit. Without auditability, regulated workloads cannot deploy. Make this metric part of the eval from day one, not a feature added at compliance-review time.</p>
+<p><strong>Reasoning accuracy.</strong> For DABstep-style downstream tasks where the agentic system’s output feeds into a reasoning step. This is a separate eval from extraction; conflating them produces misleading results. If your workflow has a reasoning layer, evaluate both extraction (with field-level F1) and downstream task success (with task-specific metrics) separately.</p>
+<p>A general principle: <strong>pick one to three metrics that match your downstream cost, track them per-field where applicable, and resist the urge to add more.</strong> A team that evaluates on twelve metrics is implicitly saying it has no model of which errors matter most. Pick the metrics. Defend the choice. Track them religiously.</p>
+</section>
+<section id="regression-testing" class="level2" data-number="11.4">
+<h2 data-number="11.4" class="anchored" data-anchor-id="regression-testing"><span class="header-section-number">11.4</span> Regression testing</h2>
+<p>Vendor versions change. Even when the vendor name on your contract does not change, the model behind the API gets retrained, retuned, or rebuilt — and the new version sometimes behaves worse than the old version on your specific documents. Regression testing is the discipline that catches this before it ships.</p>
+<p>The cadence that works in production:</p>
+<ul>
+<li><strong>Weekly: 50-document subset.</strong> A fast sanity-check on the highest-traffic document types. Run automatically after any vendor version-bump notification.</li>
+<li><strong>Monthly: full golden set.</strong> The full 200–500 document evaluation. Track per-field F1 over time. Look for drift in specific fields, not just aggregate.</li>
+<li><strong>Quarterly: golden-set refresh.</strong> Add new documents, retire stale ones. Re-baseline the per-field expectations on the refreshed set.</li>
+<li><strong>Vendor major-version bumps: full re-eval before promotion.</strong> Vendors that release major versions (LlamaParse v2 → v3, Reducto major-version updates, etc.) should not be promoted to production until the full golden set has been re-evaluated. This is the case where the rollback risk is highest.</li>
+</ul>
+<p><strong>Pin vendor versions in production.</strong> Most commercial vendors support version pinning; use it. The cost is missing out on improvements between pinned-version and current; the benefit is that production behavior changes only when you decide to upgrade, not when the vendor decides to roll out a new model overnight.</p>
+<p>Track regression as a separate operational metric. A healthy regression cadence catches roughly one to three regressions per year on a stable golden set. Zero regressions per year is a sign your golden set is not sensitive enough; more than five per year suggests vendor instability that may itself be a procurement signal.</p>
+</section>
+<section id="hitl-feedback-loops" class="level2" data-number="11.5">
+<h2 data-number="11.5" class="anchored" data-anchor-id="hitl-feedback-loops"><span class="header-section-number">11.5</span> HITL feedback loops</h2>
+<p>The HITL queue is part of the eval. This is the point that most teams underweight, and it costs them.</p>
+<p>Three production metrics live in the HITL queue:</p>
+<p><strong>Escalation rate.</strong> The percentage of documents the system routes to a human reviewer. Healthy 2026 deployments sit in the 1–10% range in steady state. Below 1% suggests the system is silently accepting errors that should have escalated; above 10% suggests extraction is too unreliable for the workload (or eval rules are too strict).</p>
+<p><strong>Acceptance rate.</strong> Of escalated documents, the percentage where the reviewer accepts the system’s extraction as-is (versus correcting it). Healthy range: 30–70%. Below 30% means the system is escalating documents it should have caught itself but the model still produced acceptable output; above 70% means the system is escalating documents it actually got right and wasting reviewer time.</p>
+<p><strong>Correction patterns.</strong> When reviewers correct, <em>what</em> do they correct? Track the per-field correction rate. A field that reviewers correct 40% of the time is a field the system handles poorly, regardless of what the per-field F1 on your golden set says. Production reviewer corrections are the most honest signal about model performance on novel documents — by definition, those documents were not in your golden set.</p>
+<p><strong>Closed-loop is the goal.</strong> Reviewer corrections should feed back into:</p>
+<ul>
+<li>The golden set (high-disagreement documents become labeled examples).</li>
+<li>Prompt tuning (systematic errors trigger prompt revisions).</li>
+<li>Vendor selection (a vendor whose corrections cluster in your high-value fields is a worse fit than one whose corrections cluster in low-value fields, even at equal aggregate accuracy).</li>
+<li>Schema design (corrections that flag fields as ambiguous suggest the schema may need a “needs review” sentinel rather than an aggressive default).</li>
+</ul>
+<p>The anti-pattern is HITL as a dead-letter queue — reviewers correct documents one at a time, and the system never learns. This is the pattern that produces flat or declining accuracy over time while leadership wonders why the agentic-OCR investment is not paying off.</p>
+</section>
+<section id="grounding-and-auditability-for-compliance" class="level2" data-number="11.6">
+<h2 data-number="11.6" class="anchored" data-anchor-id="grounding-and-auditability-for-compliance"><span class="header-section-number">11.6</span> Grounding and auditability for compliance</h2>
+<p>For regulated workloads, grounding is not a feature, it is a requirement.</p>
+<p>Practically, this means every extracted field carries metadata identifying the source region — page number, bounding box, optionally specific text span. The downstream consumer can render the output alongside the document with the cited region highlighted. The compliance auditor can verify the extraction. The HITL reviewer can correct it efficiently.</p>
+<p>The eval implication: <strong>grounding accuracy is a first-class metric, not a checkbox</strong>. Measure it on the golden set. Track it over time. A vendor whose field-level F1 is 95% but whose grounding-accuracy is 70% is a worse fit for a compliance workload than a vendor at 92%/95% — the second vendor’s outputs are auditable; the first vendor’s are not.</p>
+<p>The retention discipline matters too. Audit logs for grounded extractions need to persist for the regulatory retention window — six years for HIPAA, varying by jurisdiction for GDPR and SOX-equivalent regimes. Verify that the vendor’s audit-log retention matches your regulatory window before signing, not after the first audit.</p>
+<p>For ZDR (Zero Data Retention) commitments — LandingAI ADE Team plan, Mistral self-hosted, certain Reducto configurations — verify in eval that ZDR is actually honored in production. The verification is operationally non-trivial: you cannot easily prove a negative (“the vendor did not retain my document”), but you can verify that the vendor’s audit logs and infrastructure are consistent with the ZDR claim. Some compliance regimes require a SOC 2 Type II report that specifically attests to ZDR; insist on this rather than the bare contractual claim.</p>
+</section>
+<section id="cost-aware-evaluation" class="level2" data-number="11.7">
+<h2 data-number="11.7" class="anchored" data-anchor-id="cost-aware-evaluation"><span class="header-section-number">11.7</span> Cost-aware evaluation</h2>
+<p>The metric most teams report — accuracy — is the wrong target. The metric that predicts the monthly bill is <strong>cost-per-correct-extraction-with-provenance</strong>, which combines accuracy with cost and HITL load:</p>
+<p><span class="math display">\[
+\text{cost-per-correct} = \frac{\text{API cost per page}}{\text{accuracy}} + \text{HITL cost per escalation} \times \text{escalation rate}
+\]</span></p>
+<p>Worked example. A vendor at $0.012 per page with 90% accuracy and a 5% escalation rate at $3 per escalation:</p>
+<ul>
+<li>API contribution: $0.012 ÷ 0.90 = $0.0133 per correct extraction.</li>
+<li>HITL contribution: $3 × 0.05 = $0.15 per page; $0.15 / 0.90 = $0.167 per correct extraction.</li>
+<li>Total: $0.180 per correct extraction.</li>
+</ul>
+<p>A competing vendor at $0.008 per page with 82% accuracy and an 8% escalation rate at the same $3 per escalation:</p>
+<ul>
+<li>API contribution: $0.008 ÷ 0.82 = $0.00976 per correct extraction.</li>
+<li>HITL contribution: $3 × 0.08 = $0.24 per page; $0.24 / 0.82 = $0.293 per correct extraction.</li>
+<li>Total: $0.303 per correct extraction.</li>
+</ul>
+<p>The second vendor is 33% cheaper per page and 68% more expensive per correct extraction. The cost-per-page number is misleading; the cost-per-correct number is the actual answer.</p>
+<p>Run this calculation on every vendor in your shortlist. Most teams find the ranking changes — sometimes substantially — relative to ranking by cost per page or accuracy alone. The combined metric is the one that should govern the decision.</p>
+<p>A practical note on the HITL cost estimate. A reviewer who is a domain expert (a paralegal for legal documents, a nurse for clinical records) loads at roughly $50–$150 per hour. At three to five minutes per review, that translates to $2.50–$12.50 per escalation. Plug your team’s actual numbers in; the order of magnitude is robust, but the specific cost-per-correct number is sensitive to this input.</p>
+</section>
+<section id="when-your-eval-is-the-bottleneck" class="level2" data-number="11.8">
+<h2 data-number="11.8" class="anchored" data-anchor-id="when-your-eval-is-the-bottleneck"><span class="header-section-number">11.8</span> When your eval is the bottleneck</h2>
+<p>A few honest observations about eval that most vendor pitches will not surface:</p>
+<p><strong>If your eval is fast, your eval is suspicious.</strong> Real evals on 200–500 documents take minutes to tens of minutes to run end-to-end, depending on the vendor’s API and your eval rubric. An eval that completes in seconds is probably scoring against a too-small subset, a too-permissive rubric, or both.</p>
+<p><strong>If your eval is small (under 100 documents), it can’t reliably distinguish vendors within 5 percentage points.</strong> The statistical noise on a 50-document eval is large enough that a vendor scoring 87% and one scoring 82% are not reliably different. 200+ documents is the minimum for reliable cross-vendor comparison.</p>
+<p><strong>If your eval has no OOD slice, you don’t know how the system fails on novel documents.</strong> Hold out a slice of explicitly out-of-distribution documents — document types your production traffic has not yet seen, or vendor formats new to your pipeline — and measure separately. Most production incidents start as OOD failures; an eval that never tests OOD performance is silent about the most consequential failure mode.</p>
+<p><strong>Investment in eval is almost always under-funded relative to investment in model selection.</strong> The standard ratio is something like 10:1 in favor of evaluating vendors and against building the eval that makes vendor evaluation meaningful. Reverse this. Spend more time on the golden set, more time on metric selection, more time on regression cadence. The vendor decision becomes obvious once the eval is good.</p>
+</section>
+<section id="what-good-eval-looks-like-in-production" class="level2" data-number="11.9">
+<h2 data-number="11.9" class="anchored" data-anchor-id="what-good-eval-looks-like-in-production"><span class="header-section-number">11.9</span> What good eval looks like in production</h2>
+<p>A healthy 2026 agentic OCR deployment exhibits these eval properties simultaneously:</p>
+<ul>
+<li><strong>Golden set of 200–500 documents</strong> from production traffic, refreshed quarterly.</li>
+<li><strong>One to three metrics</strong> matched to the workload (typically: field-level F1, schema-validity, grounding accuracy).</li>
+<li><strong>Per-field tracking</strong>, not just aggregate.</li>
+<li><strong>Regression cadence</strong> — weekly subset, monthly full, quarterly refresh, vendor-version full re-eval.</li>
+<li><strong>HITL closed-loop</strong>: corrections flow back into the golden set, prompt tuning, vendor selection.</li>
+<li><strong>Cost-per-correct-extraction</strong> computed and reported as the primary economic metric.</li>
+<li><strong>OOD slice</strong> held out and measured separately to surface novel-document failures.</li>
+</ul>
+<p>No deployment achieves all seven on day one. Teams that work toward them iteratively, over twelve to eighteen months, produce robust, defensible eval infrastructure. Teams that treat eval as a setup task to be completed and forgotten produce evaluations that gradually lose connection to production reality and start lying without warning.</p>
+<div class="callout callout-style-simple callout-tip callout-titled" title="Named takes">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Named takes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><em>Golden sets are unfashionable, slow, and the single best ROI any agentic OCR team can deliver. Build one before you buy anything.</em></p>
+<p><em>If your eval is faster than your inference, your eval is wrong. Real evals are not fast.</em></p>
+<p><em>The HITL queue is part of the eval, not a fallback bolted on the side. The metric that tells you the most about your system in production lives in the reviewer’s accept/correct decisions.</em></p>
+</div>
+</div>
+
+
+<div id="refs" class="references csl-bib-body hanging-indent" role="list" style="display: none">
+<div id="ref-rdtablebench" class="csl-entry" role="listitem">
+Reducto AI. 2025. <em>Announcing RD-TableBench: An Open-Source Table Benchmark</em>. Reducto Blog. <a href="https://reducto.ai/blog/rd-tablebench">https://reducto.ai/blog/rd-tablebench</a>.
+</div>
+</div>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../chapters/10-benchmarks.html" class="pagination-link" aria-label="Benchmarks">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Benchmarks</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../chapters/12-rag.html" class="pagination-link" aria-label="Agentic OCR and RAG">
+        <span class="nav-page-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">Agentic OCR and RAG</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/anujsadani/agentic-ocr/edit/main/chapters/11-evaluating-your-pipeline.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/anujsadani/agentic-ocr/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>

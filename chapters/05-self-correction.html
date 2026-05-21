@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>5&nbsp; Self-Correction: What It Means and What It Doesn’t – Agentic OCR in 2026</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../chapters/06-shift-left.html" rel="next">
+<link href="../chapters/04-architecture.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-fd4ce07459228ab8e9a15919b2e9eca9.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-936c8bacc3095c74008b4e54f44f2cc1.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<meta name="mermaid-theme" content="neutral">
+<script src="../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+
+</head>
+
+<body class="nav-sidebar docked quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../chapters/04-architecture.html">Part II — Architecture</a></li><li class="breadcrumb-item"><a href="../chapters/05-self-correction.html"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Self-Correction: What It Means and What It Doesn’t</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="../">Agentic OCR in 2026</a> 
+        <div class="sidebar-tools-main tools-wide">
+    <a href="https://github.com/anujsadani/agentic-ocr" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+    <a href="../agentic-ocr-2026.pdf" title="Download PDF" class="quarto-navigation-tool px-1" aria-label="Download PDF"><i class="bi bi-file-pdf"></i></a>
+    <div class="dropdown">
+      <a href="" title="Share" id="quarto-navigation-tool-dropdown-0" class="quarto-navigation-tool dropdown-toggle px-1" data-bs-toggle="dropdown" aria-expanded="false" role="link" aria-label="Share"><i class="bi bi-share"></i></a>
+      <ul class="dropdown-menu" aria-labelledby="quarto-navigation-tool-dropdown-0">
+          <li>
+            <a class="dropdown-item sidebar-tools-main-item" href="https://twitter.com/intent/tweet?url=|url|">
+              <i class="bi bi-twitter pe-1"></i>
+            Twitter
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item sidebar-tools-main-item" href="https://www.linkedin.com/sharing/share-offsite/?url=|url|">
+              <i class="bi bi-linkedin pe-1"></i>
+            LinkedIn
+            </a>
+          </li>
+      </ul>
+    </div>
+</div>
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Preface</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part I — Foundations</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/01-introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction: The Agentic Turn</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/02-history.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">A Short History of Document Processing</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/03-what-it-is.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">What Agentic OCR Actually Is</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part II — Architecture</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/04-architecture.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Architecture Patterns</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/05-self-correction.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Self-Correction: What It Means and What It Doesn’t</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/06-shift-left.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">The Shift-Left Thesis</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part III — The 2026 Landscape</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/07-commercial-players.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Commercial Players</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/08-opensource-players.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Open-Source Players</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/09-vendor-selection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Vendor Selection</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part IV — Evaluation &amp; Integration</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/10-benchmarks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Benchmarks</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/11-evaluating-your-pipeline.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Evaluating Your Own Pipeline</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/12-rag.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">Agentic OCR and RAG</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part V — Reality Check</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/13-anti-patterns.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">Anti-Patterns and Misconceptions</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/14-limitations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">What Agentic OCR Doesn’t Solve</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/15-conclusion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">Conclusion: Where 2027 Goes</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text">Appendices</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../appendices/glossary.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">Glossary</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../appendices/bibliography.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Bibliography</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../appendices/cheatsheet.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">B</span>&nbsp; <span class="chapter-title">Quick-Reference Cheatsheet</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#the-most-under-discussed-paper-of-2026" id="toc-the-most-under-discussed-paper-of-2026" class="nav-link active" data-scroll-target="#the-most-under-discussed-paper-of-2026"><span class="header-section-number">5.1</span> The most under-discussed paper of 2026</a></li>
+  <li><a href="#three-subsystems-not-one-capability" id="toc-three-subsystems-not-one-capability" class="nav-link" data-scroll-target="#three-subsystems-not-one-capability"><span class="header-section-number">5.2</span> Three subsystems, not one capability</a></li>
+  <li><a href="#the-reflection-loop-mechanically" id="toc-the-reflection-loop-mechanically" class="nav-link" data-scroll-target="#the-reflection-loop-mechanically"><span class="header-section-number">5.3</span> The reflection loop, mechanically</a></li>
+  <li><a href="#confidence-gating-real-versus-theatre" id="toc-confidence-gating-real-versus-theatre" class="nav-link" data-scroll-target="#confidence-gating-real-versus-theatre"><span class="header-section-number">5.4</span> Confidence gating: real versus theatre</a></li>
+  <li><a href="#a-failure-taxonomy" id="toc-a-failure-taxonomy" class="nav-link" data-scroll-target="#a-failure-taxonomy"><span class="header-section-number">5.5</span> A failure taxonomy</a></li>
+  <li><a href="#what-self-correction-does-not-do" id="toc-what-self-correction-does-not-do" class="nav-link" data-scroll-target="#what-self-correction-does-not-do"><span class="header-section-number">5.6</span> What self-correction does not do</a></li>
+  <li><a href="#what-good-self-correction-looks-like-in-production" id="toc-what-good-self-correction-looks-like-in-production" class="nav-link" data-scroll-target="#what-good-self-correction-looks-like-in-production"><span class="header-section-number">5.7</span> What good self-correction looks like in production</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/anujsadani/agentic-ocr/edit/main/chapters/05-self-correction.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/anujsadani/agentic-ocr/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../chapters/04-architecture.html">Part II — Architecture</a></li><li class="breadcrumb-item"><a href="../chapters/05-self-correction.html"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Self-Correction: What It Means and What It Doesn’t</span></a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title"><span id="sec-self-correction" class="quarto-section-identifier"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Self-Correction: What It Means and What It Doesn’t</span></span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-simple callout-note callout-titled" title="Executive summary">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Executive summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>Self-correction is the single most over-loaded phrase in 2026 agentic-OCR marketing. It is doing the work of three distinct subsystems — <strong>detection</strong>, <strong>repair</strong>, and <strong>escalation</strong> — and most vendors who use the term have, at best, one of the three working well.</li>
+<li>The dominant production failure mode is <strong>detection failure</strong>: the model is wrong, the confidence score is high, the loop never triggers, the error ships. The most discussed result in the 2026 literature (“Tiny Silent Hallucinations in Agentic AI”) is essentially a paper-length elaboration of this point.</li>
+<li>Confidence scores from VLMs are not calibrated probabilities. Treat them as an ordinal signal, cross-validate with external oracles (schema validators, secondary models, tool outputs), and never let an un-cross-checked confidence threshold be the only gate between extraction and output.</li>
+<li>Self-correction does not fix bad source documents, does not detect missing semantic context, and does not eliminate the need for HITL. It reduces HITL volume, sometimes by an order of magnitude. It does not replace it.</li>
+</ul>
+</div>
+</div>
+<section id="the-most-under-discussed-paper-of-2026" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="the-most-under-discussed-paper-of-2026"><span class="header-section-number">5.1</span> The most under-discussed paper of 2026</h2>
+<p>Sometime in early 2026, an unflashy short paper titled <em>“Tiny Silent Hallucinations in Agentic AI”</em> circulated on OpenReview <span class="citation" data-cites="tinysilent2026">(<a href="../appendices/bibliography.html#ref-tinysilent2026" role="doc-biblioref">Various 2026</a>)</span>. The paper studied a class of failure mode in agentic systems where the model produced an output that was confidently wrong, and the surrounding loop — the reflection step, the confidence check, the schema validator — failed to flag it. The errors were small (a transposed digit, a misread date, a single field misclassified) but they were silent, in the precise sense that the system gave no indication anything had gone wrong. They shipped.</p>
+<p>The paper got modest attention at publication and considerably more by mid-2026 as production teams started seeing the pattern in their own deployments. The finding is unsettling because it punctures the most reassuring story that agentic OCR vendors tell about their systems: that the loop catches errors the model misses. It often does. It also, with a surprising frequency, does not.</p>
+<p>This chapter is about why. Self-correction is a real capability that real systems implement, and the field has made measurable progress on it. But the marketing has run far ahead of the engineering, and the production deployments that survive contact with reality are the ones whose teams understand what self-correction does and — equally important — what it does not do.</p>
+</section>
+<section id="three-subsystems-not-one-capability" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="three-subsystems-not-one-capability"><span class="header-section-number">5.2</span> Three subsystems, not one capability</h2>
+<p>When a vendor says “the system self-corrects,” they could be describing any of three operationally distinct things. They are usually describing one of the three and implying the other two. The first move in evaluating a self-correction story is to insist on the disambiguation.</p>
+<p><strong>Detection</strong> — knowing that an extraction is wrong. This requires either (a) an external oracle that can verify the extraction independently or (b) a confidence signal that is genuinely calibrated against accuracy on the system’s actual production distribution. Detection is by far the hardest of the three subsystems to do well. It is also the one most production failures are downstream of.</p>
+<p><strong>Repair</strong> — fixing a detected error. This is typically a re-extraction with revised instructions (“the date you produced is invalid; re-examine the date field”), but it can also be a routing decision (send this region to a specialized tool the system did not initially use) or a contextual lookup (resolve the entity against an external KB before deciding the extraction is wrong). Repair is the easiest of the three. Most vendors do it reasonably well, because the LLM behind it is good at responding to specific revision prompts.</p>
+<p><strong>Escalation</strong> — failing safely when detection or repair cannot close the loop. Escalation routes the document to a human reviewer, attaches the relevant context (the failing field, the candidate extraction, the source region highlighted), and pre-populates the reviewer’s interface for an efficient decision. Escalation is, in some ways, the most engineering-intensive of the three because it requires a HITL queue, a reviewer-facing UI, a feedback loop back into the system, and operational discipline around the queue’s response time.</p>
+<p>A system that does all three well is a real agentic OCR system. A system that does two of three has predictable, named failure modes (Chapter 13 returns to these as anti-patterns). A system that does only one — typically repair — is what most vendor demos are showing you, and it is much less useful than it looks.</p>
+</section>
+<section id="the-reflection-loop-mechanically" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="the-reflection-loop-mechanically"><span class="header-section-number">5.3</span> The reflection loop, mechanically</h2>
+<p>The canonical reflection loop, simplified to its essential structure, looks like this:</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TD
+    A[Extraction] --&gt; B[Self-critique]
+    B --&gt; C{Confidence above threshold?}
+    C -- Yes --&gt; D[Output]
+    C -- No --&gt; E{Retries left?}
+    E -- Yes --&gt; F[Re-prompt with critique]
+    F --&gt; A
+    E -- No --&gt; G[Escalate to HITL]
+</pre>
+</div>
+<p></p><figcaption> Reflection loop with confidence gating</figcaption> </figure><p></p>
+</div>
+</div>
+</div>
+<p>A few things about this diagram are worth holding onto, because the failure modes hide in the details.</p>
+<p><strong>The self-critique step.</strong> What the model is critiquing here is its own output. That is the source of most detection failures: a model that produced a wrong answer with high confidence is often <em>also</em> the model that critiques that answer favorably. The loop has no external oracle in the simple version. Adding one — a schema validator, a secondary model with a different prompt, a tool output — is what turns a fragile loop into a robust one. Production-grade implementations almost always wire in at least one external oracle. Demo-grade implementations often do not.</p>
+<p><strong>The confidence threshold.</strong> This is a number. Typically somewhere in the 0.6 to 0.9 range for the model-emitted confidence scores. The right value is the value that, on your golden set, maximizes a defensible utility function — usually some combination of accuracy and HITL escalation rate. Choosing it by intuition is the sort of thing that looks fine in development and quietly destroys production. The threshold needs to be calibrated, and calibration on out-of-distribution documents (i.e., the documents your system will see in production that are unlike anything it saw in development) is the live research problem.</p>
+<p><strong>The retry budget.</strong> Usually two to four. The lower bound matters because a single retry is often not enough to converge on the right answer; the upper bound matters because retries cost real money and a recalcitrant document can burn through retries without ever improving. Some sophisticated systems vary the retry budget by document complexity or by extraction confidence — burning more retries on the documents where the marginal probability of getting it right is high, and giving up faster on documents the model clearly cannot handle.</p>
+<p><strong>The escalation path.</strong> When the loop gives up, what happens? In production, escalation usually means “added to a HITL queue with the failing field highlighted.” In demos, escalation often means “returns an error to the API caller” — which is operationally useless because there is nobody on the other end of the API to do something about it.</p>
+</section>
+<section id="confidence-gating-real-versus-theatre" class="level2" data-number="5.4">
+<h2 data-number="5.4" class="anchored" data-anchor-id="confidence-gating-real-versus-theatre"><span class="header-section-number">5.4</span> Confidence gating: real versus theatre</h2>
+<p>Confidence scores deserve their own section because so much of the field’s self-correction story rides on them, and so much of that story is wrong.</p>
+<p>A confidence score, in agentic OCR, is a number between zero and one that the model emits alongside an extraction. The intuitive story is that it represents the probability that the extraction is correct. The actual reality is more complicated.</p>
+<p>For a <em>well-calibrated</em> model on its <em>training distribution</em>, the confidence score does approximately what the intuitive story claims. A confidence of 0.95 on an extraction means that, across many similar extractions, roughly 95% of them are correct. This is a useful signal. The threshold is meaningful. The reflection loop works.</p>
+<p>For an <em>uncalibrated</em> model on an <em>out-of-distribution</em> document — which is what most production deployments see most of the time — the confidence score is at best an ordinal signal. The model is more confident on extraction A than on extraction B, but neither number means what the intuitive story claims. A confidence of 0.95 on an OOD document can be accompanied by an accuracy as low as 60%, and a confidence of 0.6 on an in-distribution document can be accompanied by an accuracy of 90%. The number is informative; the number is not a probability.</p>
+<p>This matters for self-correction because the standard reflection loop gates on confidence as if it were a probability. If your gating logic is <code>if confidence &lt; 0.85 then retry</code>, you are assuming the model knows when it does not know. On in-distribution data with calibrated models, this assumption is approximately true. On out-of-distribution data with realistic models, this assumption is wrong, and the gate fails closed (high-confidence wrong answers ship) much more often than fail open.</p>
+<p>The Databricks “$10,000 → $3,000” hallucination is a textbook example <span class="citation" data-cites="databricks2026documentintelligence">(<a href="../appendices/bibliography.html#ref-databricks2026documentintelligence" role="doc-biblioref">Databricks 2026</a>)</span>. The model misread the value. The model was confident in its misreading. The reflection loop, gating on confidence, approved the wrong answer. The error shipped. No external oracle was in the loop to verify against the actual digit on the page.</p>
+<p>The fix is not “improve the confidence scores.” The fix is to stop treating confidence as the only gate. Real production self-correction wires in <strong>external oracles</strong>:</p>
+<ul>
+<li><strong>Schema validators.</strong> Does the output parse? Are dates in valid ranges? Are required fields present? Are enums populated with allowed values? Schema validation is cheap, deterministic, and catches a surprising fraction of high-confidence wrong answers — particularly the kind that hallucinate plausible-looking values.</li>
+<li><strong>Secondary models.</strong> A second VLM with a different prompt produces a candidate extraction. If the two extractions disagree, escalate or re-prompt with the disagreement as context. This is expensive (two model calls instead of one) but catches errors that single-model self-critique structurally cannot.</li>
+<li><strong>Tool cross-checks.</strong> A layout detector says the date field lives in this bounding box. The VLM extracted the date from a different region. Disagreement → flag.</li>
+<li><strong>External KB lookups.</strong> The extracted ICD code is not in the ICD-10 codebook. The extracted vendor name does not match any vendor in the system’s vendor list. These are deterministic checks that any agentic system handling structured domains should run by default.</li>
+</ul>
+<p>Each external oracle has costs (compute, latency, integration effort), and a production system rarely uses all of them on every document. The healthy pattern is to use them adaptively: schema validation always (it is nearly free), KB lookups when the extracted entity falls in a domain the system knows about, secondary models when the primary extraction is below some confidence threshold or when the document is flagged as high-stakes.</p>
+</section>
+<section id="a-failure-taxonomy" class="level2" data-number="5.5">
+<h2 data-number="5.5" class="anchored" data-anchor-id="a-failure-taxonomy"><span class="header-section-number">5.5</span> A failure taxonomy</h2>
+<p>The most useful tool for evaluating a self-correction implementation — your own or a vendor’s — is a taxonomy that names the specific failure modes so you can ask whether the system handles each one.</p>
+<p><strong>Detection failures</strong> are failures of subsystem one — the system did not notice the error.</p>
+<ul>
+<li><em>Silent hallucination.</em> The model produces a wrong answer with high confidence. The loop sees high confidence, accepts the output, ships the error. The most common production failure mode. Mitigations: external oracles, secondary-model cross-checking, calibrated confidence thresholds tuned on a representative golden set.</li>
+<li><em>Confidence miscalibration.</em> The model produces a borderline answer but reports either much higher or much lower confidence than the accuracy data would justify. Mitigations: empirical calibration on a golden set, treating confidence as ordinal rather than absolute.</li>
+<li><em>Out-of-distribution blindness.</em> The document is sufficiently different from anything in the model’s training distribution that the model has no real basis for opinion, but emits one anyway. Mitigations: OOD detection as a pre-extraction step; route OOD documents directly to HITL.</li>
+</ul>
+<p><strong>Repair failures</strong> are failures of subsystem two — the system noticed the error but could not fix it.</p>
+<ul>
+<li><em>Repair thrash.</em> Every retry produces a different wrong answer. The model is not converging. Mitigations: cap retry budget, vary prompt strategy across retries (different specialized tools, different VLM, different prompt template), recognize thrash patterns and escalate early.</li>
+<li><em>Reflection drift.</em> The model’s own critique drifts further from truth across iterations. Most often happens when the critique step is run by the same model that produced the original extraction, with no external grounding. Mitigations: external oracle in the critique step; rotate critic model.</li>
+<li><em>Schema rigidity overcorrection.</em> The system tries to coerce an extraction into a schema that does not fit the document and produces a series of progressively worse answers. Mitigations: schema flexibility (accept fields the schema does not anticipate), and recognize when the document is structurally incompatible with the target schema.</li>
+</ul>
+<p><strong>Escalation failures</strong> are failures of subsystem three — the system escalated, but escalation did not solve the problem.</p>
+<ul>
+<li><em>No HITL path.</em> The system raises an error or returns a “could not extract” signal, but there is no human reviewer queue downstream. The error becomes a customer complaint. Mitigations: build the queue; do not deploy without it.</li>
+<li><em>HITL overload.</em> The system escalates too aggressively (often because confidence thresholds are too strict or because production traffic is OOD relative to development) and floods the reviewer queue. Mitigations: monitor escalation rate as a production metric; tune thresholds; investigate whether OOD documents have a different routing path than in-distribution documents.</li>
+<li><em>HITL underload (silent acceptance).</em> The opposite failure: the system escalates almost nothing because confidence is structurally high on OOD data. Mitigations: track HITL acceptance rate (the rate at which reviewers correct vs.&nbsp;accept escalated extractions); a healthy system has escalation rate of 1–10% and HITL acceptance rate (i.e.&nbsp;reviewer agrees the system got it right) somewhere between 30% and 70%. Extremes in either direction suggest a broken loop.</li>
+</ul>
+<p>The taxonomy is not exhaustive — the OpenReview paper and several follow-ups have catalogued additional failure modes in narrower contexts — but it covers the cases that most production teams will encounter. Run it as a checklist against a vendor’s self-correction story. The vendors that can answer all nine specific mitigations have done the engineering. The vendors that hand-wave through the categories have not.</p>
+</section>
+<section id="what-self-correction-does-not-do" class="level2" data-number="5.6">
+<h2 data-number="5.6" class="anchored" data-anchor-id="what-self-correction-does-not-do"><span class="header-section-number">5.6</span> What self-correction does not do</h2>
+<p>The capability is real; the marketing claims around it are often larger than the capability. A few honest delineations:</p>
+<p><strong>Self-correction does not fix bad source documents.</strong> If the original page is illegible, smeared, partially redacted, or upside-down at a 30-degree angle the deskewer cannot handle, no amount of reflection will recover the underlying information. The model can detect that something is wrong (sometimes) but cannot conjure correct values from a document that does not contain them. Garbage in, garbage out — with more API calls.</p>
+<p><strong>Self-correction does not detect missing semantic context.</strong> An invoice with a missing required field is correctly extracted as “this field is missing.” Whether the field <em>should</em> have been present is a question about the document’s intended structure, which the model has no way to answer reliably. Production systems handle this with schema validation that flags missing required fields, plus HITL routing for the flagged cases. The model is not the right tool.</p>
+<p><strong>Self-correction does not provide compliance certification.</strong> It can support compliance work — grounded outputs, audit logs, escalation trails — but it does not produce compliance. A regulated workflow still needs a compliance review by humans who understand the regulatory regime. Vendors who sell self-correction as if it removes the need for compliance review are selling something they cannot deliver.</p>
+<p><strong>Self-correction does not eliminate HITL.</strong> It reduces the volume of HITL, often dramatically. Production deployments that pre-agentic ran 30–50% manual review can land at 5–10% escalation rates after a careful Pattern B or C deployment. That is transformative ROI. It is not zero. Plan for HITL forever. The vendors who promise HITL elimination produce the deployments that fail most spectacularly when they meet real production traffic.</p>
+</section>
+<section id="what-good-self-correction-looks-like-in-production" class="level2" data-number="5.7">
+<h2 data-number="5.7" class="anchored" data-anchor-id="what-good-self-correction-looks-like-in-production"><span class="header-section-number">5.7</span> What good self-correction looks like in production</h2>
+<p>A healthy 2026 agentic OCR deployment exhibits these properties simultaneously:</p>
+<ul>
+<li><strong>Escalation rate between 1% and 10%</strong> of documents in steady state.</li>
+<li><strong>HITL reviewer agreement rate around 30–70%</strong> — the reviewers correct the system often enough that escalation is doing useful work, but agree often enough that the system is not just dumping documents onto humans.</li>
+<li><strong>Confidence calibration within 5–10 percentage points</strong> of accuracy across the production distribution, verified quarterly on a refreshed golden set.</li>
+<li><strong>Retry budgets observed (and respected) per document type</strong>, with thrash detection that gives up faster on documents the model cannot handle.</li>
+<li><strong>External oracles wired in</strong> — at minimum schema validation; preferably also entity lookups and (for high-stakes) secondary-model cross-checking.</li>
+<li><strong>Drift monitoring</strong> that catches the inevitable production distribution drift before it becomes a customer-visible incident.</li>
+</ul>
+<p>No deployment achieves all six on day one. Most achieve them iteratively over the first six to twelve months in production. Teams that treat self-correction as something the vendor sold them, rather than as a discipline they own, do not achieve them ever.</p>
+<div class="callout callout-style-simple callout-tip callout-titled" title="Named takes">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Named takes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><em>Self-correction is not “the model will figure it out.” It is three concrete subsystems — detection, repair, escalation. If your vendor talks about it as one thing, they have one of the three working.</em></p>
+<p><em>A reflection loop with no out-of-loop ground truth is a model becoming more confident in its first answer. Call it what it is.</em></p>
+<p><em>Confidence scores from agentic OCR systems are an opinion the model has about its own work. Treat them as you would any other unverified opinion.</em></p>
+</div>
+</div>
+
+
+<div id="refs" class="references csl-bib-body hanging-indent" role="list" style="display: none">
+<div id="ref-databricks2026documentintelligence" class="csl-entry" role="listitem">
+Databricks. 2026. <em>Why Frontier Agents Can’t Read Documents — and How We’re Fixing It</em>. Databricks Blog. <a href="https://www.databricks.com/blog/why-frontier-agents-cant-read-documents-and-how-were-fixing-it">https://www.databricks.com/blog/why-frontier-agents-cant-read-documents-and-how-were-fixing-it</a>.
+</div>
+<div id="ref-tinysilent2026" class="csl-entry" role="listitem">
+Various. 2026. <em>Tiny Silent Hallucinations in Agentic <span>AI</span>: Hidden Failure Modes in Autonomous Systems</em>. OpenReview. <a href="https://openreview.net/forum?id=1KxDazvI6L">https://openreview.net/forum?id=1KxDazvI6L</a>.
+</div>
+</div>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../chapters/04-architecture.html" class="pagination-link" aria-label="Architecture Patterns">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Architecture Patterns</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../chapters/06-shift-left.html" class="pagination-link" aria-label="The Shift-Left Thesis">
+        <span class="nav-page-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">The Shift-Left Thesis</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/anujsadani/agentic-ocr/edit/main/chapters/05-self-correction.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/anujsadani/agentic-ocr/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>

@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>13&nbsp; Anti-Patterns and Misconceptions – Agentic OCR in 2026</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../chapters/14-limitations.html" rel="next">
+<link href="../chapters/12-rag.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-fd4ce07459228ab8e9a15919b2e9eca9.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-936c8bacc3095c74008b4e54f44f2cc1.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+</head>
+
+<body class="nav-sidebar docked quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../chapters/13-anti-patterns.html">Part V — Reality Check</a></li><li class="breadcrumb-item"><a href="../chapters/13-anti-patterns.html"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">Anti-Patterns and Misconceptions</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="../">Agentic OCR in 2026</a> 
+        <div class="sidebar-tools-main tools-wide">
+    <a href="https://github.com/anujsadani/agentic-ocr" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+    <a href="../agentic-ocr-2026.pdf" title="Download PDF" class="quarto-navigation-tool px-1" aria-label="Download PDF"><i class="bi bi-file-pdf"></i></a>
+    <div class="dropdown">
+      <a href="" title="Share" id="quarto-navigation-tool-dropdown-0" class="quarto-navigation-tool dropdown-toggle px-1" data-bs-toggle="dropdown" aria-expanded="false" role="link" aria-label="Share"><i class="bi bi-share"></i></a>
+      <ul class="dropdown-menu" aria-labelledby="quarto-navigation-tool-dropdown-0">
+          <li>
+            <a class="dropdown-item sidebar-tools-main-item" href="https://twitter.com/intent/tweet?url=|url|">
+              <i class="bi bi-twitter pe-1"></i>
+            Twitter
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item sidebar-tools-main-item" href="https://www.linkedin.com/sharing/share-offsite/?url=|url|">
+              <i class="bi bi-linkedin pe-1"></i>
+            LinkedIn
+            </a>
+          </li>
+      </ul>
+    </div>
+</div>
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Preface</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part I — Foundations</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/01-introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction: The Agentic Turn</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/02-history.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">A Short History of Document Processing</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/03-what-it-is.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">What Agentic OCR Actually Is</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part II — Architecture</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/04-architecture.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Architecture Patterns</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/05-self-correction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Self-Correction: What It Means and What It Doesn’t</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/06-shift-left.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">The Shift-Left Thesis</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part III — The 2026 Landscape</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/07-commercial-players.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Commercial Players</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/08-opensource-players.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Open-Source Players</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/09-vendor-selection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Vendor Selection</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part IV — Evaluation &amp; Integration</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/10-benchmarks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Benchmarks</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/11-evaluating-your-pipeline.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Evaluating Your Own Pipeline</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/12-rag.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">Agentic OCR and RAG</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part V — Reality Check</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/13-anti-patterns.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">Anti-Patterns and Misconceptions</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/14-limitations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">What Agentic OCR Doesn’t Solve</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/15-conclusion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">Conclusion: Where 2027 Goes</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text">Appendices</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../appendices/glossary.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">Glossary</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../appendices/bibliography.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Bibliography</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../appendices/cheatsheet.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">B</span>&nbsp; <span class="chapter-title">Quick-Reference Cheatsheet</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#how-to-use-this-chapter" id="toc-how-to-use-this-chapter" class="nav-link active" data-scroll-target="#how-to-use-this-chapter"><span class="header-section-number">13.1</span> How to use this chapter</a></li>
+  <li><a href="#anti-pattern-1-wrapper-washing" id="toc-anti-pattern-1-wrapper-washing" class="nav-link" data-scroll-target="#anti-pattern-1-wrapper-washing"><span class="header-section-number">13.2</span> Anti-pattern 1: Wrapper-washing</a></li>
+  <li><a href="#anti-pattern-2-schema-rigidity" id="toc-anti-pattern-2-schema-rigidity" class="nav-link" data-scroll-target="#anti-pattern-2-schema-rigidity"><span class="header-section-number">13.3</span> Anti-pattern 2: Schema rigidity</a></li>
+  <li><a href="#anti-pattern-3-ignoring-hitl" id="toc-anti-pattern-3-ignoring-hitl" class="nav-link" data-scroll-target="#anti-pattern-3-ignoring-hitl"><span class="header-section-number">13.4</span> Anti-pattern 3: Ignoring HITL</a></li>
+  <li><a href="#anti-pattern-4-over-relying-on-confidence-scores" id="toc-anti-pattern-4-over-relying-on-confidence-scores" class="nav-link" data-scroll-target="#anti-pattern-4-over-relying-on-confidence-scores"><span class="header-section-number">13.5</span> Anti-pattern 4: Over-relying on confidence scores</a></li>
+  <li><a href="#anti-pattern-5-conflating-extraction-with-reasoning" id="toc-anti-pattern-5-conflating-extraction-with-reasoning" class="nav-link" data-scroll-target="#anti-pattern-5-conflating-extraction-with-reasoning"><span class="header-section-number">13.6</span> Anti-pattern 5: Conflating extraction with reasoning</a></li>
+  <li><a href="#a-short-checklist-for-your-own-architecture" id="toc-a-short-checklist-for-your-own-architecture" class="nav-link" data-scroll-target="#a-short-checklist-for-your-own-architecture"><span class="header-section-number">13.7</span> A short checklist for your own architecture</a></li>
+  <li><a href="#beyond-the-five-patterns-to-watch-for" id="toc-beyond-the-five-patterns-to-watch-for" class="nav-link" data-scroll-target="#beyond-the-five-patterns-to-watch-for"><span class="header-section-number">13.8</span> Beyond the five — patterns to watch for</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/anujsadani/agentic-ocr/edit/main/chapters/13-anti-patterns.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/anujsadani/agentic-ocr/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../chapters/13-anti-patterns.html">Part V — Reality Check</a></li><li class="breadcrumb-item"><a href="../chapters/13-anti-patterns.html"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">Anti-Patterns and Misconceptions</span></a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title"><span id="sec-anti-patterns" class="quarto-section-identifier"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">Anti-Patterns and Misconceptions</span></span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-simple callout-note callout-titled" title="Executive summary">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Executive summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>Five dominant anti-patterns in 2026 agentic OCR: <strong>wrapper-washing</strong>, <strong>schema rigidity</strong>, <strong>ignoring HITL</strong>, <strong>over-relying on confidence scores</strong>, and <strong>conflating extraction with reasoning</strong>. Each has a one-line smell test you can apply to a vendor demo, an internal architecture review, or your own pilot.</li>
+<li>The most common failure shape is not technical; it is <strong>procurement-level</strong>. Buying the wrong category of tool, for the wrong workload, on the basis of impressive demos. The “don’t build for the sake of it” framing in <a href="09-vendor-selection.html#sec-dont-build" class="quarto-xref"><span>Section 9.5</span></a> is the procurement-level companion to this chapter’s per-system anti-patterns.</li>
+<li>These anti-patterns are not always vendor villainy. They are also things diligent teams do to themselves when they have not yet absorbed the five-attribute test, the architecture vocabulary, or the eval discipline that the rest of the book has built up.</li>
+<li>Print the checklist at the end of this chapter. Use it before signing.</li>
+</ul>
+</div>
+</div>
+<section id="how-to-use-this-chapter" class="level2" data-number="13.1">
+<h2 data-number="13.1" class="anchored" data-anchor-id="how-to-use-this-chapter"><span class="header-section-number">13.1</span> How to use this chapter</h2>
+<p>Each anti-pattern in this chapter follows the same structure:</p>
+<ul>
+<li>A short description of the pattern as it appears in the field.</li>
+<li>Why it works as a sales or design pattern despite being a bad idea.</li>
+<li>A specific <em>smell test</em> — one line you can apply during a demo or design review to detect the pattern.</li>
+<li>What the corresponding <em>correct</em> implementation looks like.</li>
+</ul>
+<p>The five anti-patterns are not exhaustive; the field has more pathologies than five. They are the five that, in the author’s field experience, account for the largest fraction of disappointed agentic-OCR deployments. A system that fails any one of these checks is a system to interrogate further, not necessarily a system to reject — but the burden of proof should sit with the vendor or the architect to explain why the pattern is being avoided.</p>
+</section>
+<section id="anti-pattern-1-wrapper-washing" class="level2" data-number="13.2">
+<h2 data-number="13.2" class="anchored" data-anchor-id="anti-pattern-1-wrapper-washing"><span class="header-section-number">13.2</span> Anti-pattern 1: Wrapper-washing</h2>
+<p><strong>The pattern.</strong> A classic-OCR pipeline (typically Tesseract or a hyperscaler API) with an LLM cleanup or post-processing step, rebranded as “agentic OCR.” The marketing collateral describes the system using all the right vocabulary — multi-pass, self-correcting, schema-aware, tool-using — but the substantive engineering is the same shape as a 2020-era pipeline with a 2024-era model bolted on.</p>
+<p><strong>Why it works as a sales pattern.</strong> In 2026, “agentic” is the word that gets the conversation past procurement. The five-attribute test from Chapter 3 is not yet common knowledge in enterprise procurement processes. A vendor who can describe their system using the vocabulary, without necessarily implementing the architecture, can charge a premium for what is, structurally, a previous-generation product.</p>
+<p><strong>Why it is dangerous to deploy.</strong> A wrapper system inherits the failure modes of its base layer. The Tesseract underneath cannot read complex tables; the LLM on top cannot fix what was lost in extraction. The system looks agentic in demos that use clean documents and produces classic-OCR-quality output on the messy ones — i.e., the ones you actually deployed agentic OCR to handle.</p>
+<p><strong>Smell test.</strong> <em>Does the system satisfy all five attributes from Chapter 3’s scorecard — goal-driven, multi-pass, self-correcting, tool-using, and grounded?</em> Score them yes / no / partial. A system that satisfies three of five is not agentic OCR. A system that satisfies four of five is borderline. Five of five is the bar.</p>
+<p>The most common attribute wrapper-washed systems miss is <strong>tool-using</strong>. A model with a <code>parse_pdf()</code> function call is <em>tool-capable</em>; tool-using means routine, orchestrated invocation of specialized tools during the workflow. Wrapper systems generally fail this test cleanly.</p>
+<p><strong>What correct looks like.</strong> A system with explicit tool-routing logic (layout detector → region classifier → specialized extractor per region type), an external oracle in the reflection loop (schema validator, secondary model, KB lookup), and grounded outputs that trace every field back to a source region. Reducto, LandingAI ADE, LlamaParse Agentic, and Granite-Docling-in-Docling-framework all satisfy this; wrappers do not.</p>
+</section>
+<section id="anti-pattern-2-schema-rigidity" class="level2" data-number="13.3">
+<h2 data-number="13.3" class="anchored" data-anchor-id="anti-pattern-2-schema-rigidity"><span class="header-section-number">13.3</span> Anti-pattern 2: Schema rigidity</h2>
+<p><strong>The pattern.</strong> An agentic OCR system that is forced to produce a fixed schema with no flexibility for unexpected fields, document variations, or fields the document contains but the schema does not anticipate. Often paired with strict downstream validation that rejects any output that does not exactly match the schema.</p>
+<p><strong>Why it works as a design choice.</strong> Schema rigidity feels safe. Downstream systems that consume the output do not have to handle variation; the API contract is stable; the integration is simpler. For narrow, stable workloads this can even be correct.</p>
+<p><strong>Why it is dangerous for agentic OCR specifically.</strong> Agentic OCR’s central advantage over template-driven IDP is its ability to handle <strong>schema-flexible extraction</strong> — to capture whatever the document contains, not just what your schema anticipates. Forcing a strict schema discards this advantage. The system becomes a more expensive template extractor.</p>
+<p>The specific failure mode: a document has an extra field that the schema does not include. Three things the system might do: 1. <strong>Drop the field silently.</strong> The document had useful information; the system threw it away. The schema rigidity is invisible until a compliance audit asks where the missing data went. 2. <strong>Fail the whole document.</strong> Stricter, but throws away the rest of the extraction along with the unexpected field. 3. <strong>Capture the field in a flexible “extras” container, with a flag.</strong> The right answer.</p>
+<p>Most schema-rigid systems do option 1 or option 2. Option 1 is more common because it preserves the per-document success rate at the cost of silent data loss.</p>
+<p><strong>Smell test.</strong> <em>When a document has an extra field your schema does not include, what does the system do?</em> If the answer is “the system drops it” or “the document fails validation,” you have a schema-rigidity problem. If the answer is “the system captures the extra in a flexible container and flags it for review,” you do not.</p>
+<p><strong>What correct looks like.</strong> Schema-aware <em>but not schema-bound</em> extraction. The schema is a <em>priority signal</em> — the system prioritizes extracting the requested fields — not a <em>boundary</em>. Fields outside the schema are captured into a structured “additional fields” container with their own provenance metadata. The HITL queue can decide whether to add them to the schema (extending coverage) or to leave them in the extras bucket. Both options are operationally manageable; silent data loss is not.</p>
+</section>
+<section id="anti-pattern-3-ignoring-hitl" class="level2" data-number="13.4">
+<h2 data-number="13.4" class="anchored" data-anchor-id="anti-pattern-3-ignoring-hitl"><span class="header-section-number">13.4</span> Anti-pattern 3: Ignoring HITL</h2>
+<p><strong>The pattern.</strong> Deploying agentic OCR with no human-review gate, on the theory that the reflection loop is the safety net. The system extracts; the output ships; if anything goes wrong, the customer notices.</p>
+<p><strong>Why it is tempting.</strong> The marketing pitch for agentic OCR routinely includes claims of “eliminates manual review” or “reduces HITL by 100%.” Teams that buy this story design their workflows accordingly. The cost savings on reviewer staffing show up in the business case for the pilot.</p>
+<p><strong>Why it fails.</strong> The reflection loop is not an external oracle (Chapter 5). It cannot catch silent hallucinations — the failure mode where the model is confidently wrong and the loop’s self-critique approves the wrong answer. The Databricks “$10,000 → $3,000” example is a textbook silent hallucination; the loop did not catch it; the error shipped because there was no human in the loop to catch it either.</p>
+<p>The deeper structural point: some errors <em>require human eyes</em>. The model cannot tell, by inspection, that “$10,000” on the page is the right number and “$3,000” is the wrong one. Only a human with context (the bond’s face value should be in a specific range; the field is critical to the downstream decision) can. A system without a HITL gate has no recourse to that human, and the error rate ships at whatever the model’s silent-hallucination rate happens to be.</p>
+<p><strong>Smell test.</strong> <em>When the system outputs a high-confidence extraction that is, in fact, wrong, what happens next?</em> If the answer is “the wrong extraction ships,” you have an ignoring-HITL problem. If the answer is “the extraction is gated by HITL on high-stakes fields, sampled for QA on low-stakes fields, or escalated by an out-of-distribution detector before output,” you do not.</p>
+<p><strong>What correct looks like.</strong> Every high-stakes field gets a HITL gate. Escalation rates run 1–10% in steady state. Low-stakes fields can ship without HITL but are sampled at some rate (often 1–5%) for ongoing quality monitoring. The HITL queue is engineered as a first-class subsystem with reviewer UI, feedback loop, and operational discipline around response times.</p>
+<p>Vendors that have engineered HITL well: the classic IDP incumbents (Hyperscience especially), Landing AI ADE, Reducto. Vendors whose HITL story is weaker: many of the newer AI-native entrants whose feature roadmap has not yet caught up with their model layer. Verify in vendor evaluation; do not assume.</p>
+</section>
+<section id="anti-pattern-4-over-relying-on-confidence-scores" class="level2" data-number="13.5">
+<h2 data-number="13.5" class="anchored" data-anchor-id="anti-pattern-4-over-relying-on-confidence-scores"><span class="header-section-number">13.5</span> Anti-pattern 4: Over-relying on confidence scores</h2>
+<p><strong>The pattern.</strong> Production gating logic that treats VLM-emitted confidence scores as calibrated probabilities and uses them as the only signal for whether an extraction is good enough to ship.</p>
+<p><strong>Why it is appealing.</strong> Confidence scores look like probabilities. They live on the 0-to-1 scale. They go up when the model is more sure of itself. Gating on them is operationally easy: <code>if confidence &gt; 0.85: ship</code>. The pattern is everywhere in 2026 production systems.</p>
+<p><strong>Why it fails.</strong> VLM-emitted confidence scores are not calibrated probabilities. They are at best ordinal signals — the model is more confident on extraction A than on extraction B — but the absolute values do not correspond to actual accuracy probabilities in any reliable way, especially on out-of-distribution data. A confidence of 0.95 on a document the model has structurally never seen before can be accompanied by an actual accuracy as low as 60%.</p>
+<p>This is not a “the models will get better” problem. Calibration on OOD data is a fundamental research problem in machine learning, and the production reality is that any confidence-based gating system will have non-trivial silent-hallucination rates as long as production traffic includes OOD documents. Which it does. Always.</p>
+<p><strong>Smell test.</strong> <em>Plot confidence vs.&nbsp;accuracy on your golden set.</em> If the curve is smooth and monotone (high confidence → high accuracy, with a clean relationship), confidence is genuinely calibrated for your distribution and you can use it as a gate. If the curve is flat or noisy (high confidence corresponds to highly variable accuracy), confidence is at best an ordinal signal, and you should not use it as the only gate.</p>
+<p><strong>What correct looks like.</strong> Confidence is one of several inputs to the gating decision, not the only one. Other inputs: - <strong>Schema validation</strong> — does the output parse, with valid field values? - <strong>External KB lookups</strong> — does the extracted entity resolve against the relevant knowledge base? - <strong>Secondary-model agreement</strong> — does a second VLM with a different prompt produce the same answer? - <strong>OOD detection</strong> — is this document sufficiently unlike the model’s training distribution that we should escalate by default?</p>
+<p>The combined gate uses confidence as one signal among multiple. The system escalates when the combined evidence suggests an error, not just when one model’s opinion of itself happens to be low. The engineering cost is modest; the production reliability gain is substantial.</p>
+</section>
+<section id="anti-pattern-5-conflating-extraction-with-reasoning" class="level2" data-number="13.6">
+<h2 data-number="13.6" class="anchored" data-anchor-id="anti-pattern-5-conflating-extraction-with-reasoning"><span class="header-section-number">13.6</span> Anti-pattern 5: Conflating extraction with reasoning</h2>
+<p><strong>The pattern.</strong> Treating an agentic-OCR system’s correct extraction as a <em>guarantee</em> that downstream tasks will produce correct answers. The procurement decision is made on parsing accuracy; the deployment fails on multi-step or reasoning-heavy tasks; the team is surprised.</p>
+<p><strong>Why it is tempting.</strong> The vocabulary collapses the two. “Intelligent document understanding,” “agentic document AI,” “document intelligence” — these terms are sold as if extraction and reasoning are one capability. They are not.</p>
+<p><strong>Why it fails.</strong> The DABstep result is the cleanest evidence. The top reasoning model — <em>given correctly extracted data and access to tools</em> — scores 14.55% on hard tasks and around 16% overall. Frontier reasoning models, with perfect parsing, fail roughly 85% of real multi-step analysis tasks.</p>
+<p>This means: even if your agentic-OCR system extracts every field correctly on every document, a downstream agent reasoning over those extractions can still fail catastrophically. Parsing accuracy is necessary; it is not sufficient. The two failure modes are separate. They have separate evals. They require separate fixes.</p>
+<p>The most common production manifestation: a team deploys an agentic-OCR system, builds a downstream LLM-powered analysis layer, and observes poor downstream performance. The team upgrades the parser, expecting the downstream behavior to improve. Parsing accuracy does improve (slightly); downstream performance does not. The team is puzzled. The DABstep result is the explanation: the bottleneck was always in the reasoning layer, and a better parser was the wrong investment.</p>
+<p><strong>Smell test.</strong> <em>When a downstream answer is wrong, can you tell whether parsing or reasoning was at fault?</em> If the system has no instrumentation to attribute failures to one or the other, you cannot diagnose, and you will spend money in the wrong place. The fix is to ablate: replace the parsing layer with a hand-curated perfect parse for a sample of downstream-failure cases. If downstream still fails, the failure was reasoning, not parsing.</p>
+<p><strong>What correct looks like.</strong> Keep parsing and reasoning evals separate. They are separate problems with separate failure modes. A system that bundles them in a single “answer accuracy” metric hides the diagnostic information you need to allocate engineering effort correctly. The eval discipline is roughly:</p>
+<ul>
+<li><em>Extraction eval</em> — field-level F1, table-cell accuracy, grounding accuracy on a golden set.</li>
+<li><em>Reasoning eval</em> — task-success rate on hand-curated downstream tasks, with parsing held constant (perfect parses or fixed parser output).</li>
+<li><em>End-to-end eval</em> — combined system behavior, but with the ability to attribute failures to one layer or the other.</li>
+</ul>
+<p>Vendors that bundle parsing-and-reasoning at a premium (the larger “document intelligence platform” pitches) are often genuinely useful for end-to-end workflows but make the layer attribution harder, not easier. Verify that the vendor’s tooling lets you instrument both layers independently before committing.</p>
+</section>
+<section id="a-short-checklist-for-your-own-architecture" class="level2" data-number="13.7">
+<h2 data-number="13.7" class="anchored" data-anchor-id="a-short-checklist-for-your-own-architecture"><span class="header-section-number">13.7</span> A short checklist for your own architecture</h2>
+<p>Print this. Use it before signing a vendor contract, before approving an internal architecture, before promoting a pilot to production.</p>
+<p><strong>1. The wrapper test.</strong> Does the system satisfy all five attributes from Chapter 3 — goal-driven, multi-pass, self-correcting, tool-using, grounded? Score them. Five of five is the bar.</p>
+<p><strong>2. The schema-flexibility test.</strong> What does the system do with an unexpected field in a document? “Captures it in a flexible extras container with a flag” is the right answer; “drops it” or “fails the document” is not.</p>
+<p><strong>3. The HITL test.</strong> When the system outputs a high-confidence extraction that is, in fact, wrong, what happens next? “Gated by HITL on high-stakes fields or sampled for QA on low-stakes fields” is the right answer; “ships without review” is not.</p>
+<p><strong>4. The calibration test.</strong> Plot confidence vs.&nbsp;accuracy on your golden set. Is the curve smooth and monotone? If not, confidence is an ordinal signal at best — do not let it be the only gate.</p>
+<p><strong>5. The decomposition test.</strong> When a downstream answer is wrong, can you tell whether parsing or reasoning was at fault? If not, your instrumentation is missing, and your future engineering will land in the wrong place.</p>
+<p>If you fail any of these five tests, you have one of the anti-patterns. The system is not necessarily unredeemable — most of these are fixable with deliberate engineering — but the deployment is not yet ready for production at the stakes you are likely contemplating. Fix the system, not the marketing language.</p>
+</section>
+<section id="beyond-the-five-patterns-to-watch-for" class="level2" data-number="13.8">
+<h2 data-number="13.8" class="anchored" data-anchor-id="beyond-the-five-patterns-to-watch-for"><span class="header-section-number">13.8</span> Beyond the five — patterns to watch for</h2>
+<p>A few additional anti-patterns that are less common but worth naming briefly:</p>
+<p><strong>Eval theater.</strong> A vendor or internal team builds an evaluation that scores their preferred system favorably and uses it as the justification. The eval may technically measure something, but the metrics chosen, the documents included, and the scoring rubric are calibrated to produce the result the team wanted. The defense is the golden set — built independently by the team that will operate the system, evaluated on metrics defended on first principles, not on convenience.</p>
+<p><strong>Vendor-version drift.</strong> A vendor releases a model update that subtly changes behavior on edge cases your team did not include in regression tests. Production accuracy declines. The decline is gradual, not obvious from any single document, but visible over months in HITL queue volume or downstream error rates. The defense is version pinning plus regression testing on vendor major-version bumps (Chapter 11).</p>
+<p><strong>Compliance retrofitting.</strong> A team deploys an agentic-OCR system without grounding or audit logs, then discovers six months in that a regulator wants to see the source region for each extraction. The system cannot produce them. The defense is treating grounding as a Day 1 requirement, not a Day 180 requirement, for any workload that might face regulatory scrutiny.</p>
+<p><strong>Vendor lock-in by output format.</strong> A team’s downstream systems are built around the specific output format of one vendor. Switching vendors requires rebuilding the integration. The defense is treating the vendor’s output format as a contract you control — normalize to a vendor-neutral intermediate representation, even when one vendor’s native format would be easier. Six months of pain in vendor switching is more expensive than the marginal engineering effort to maintain a normalized representation.</p>
+<p>None of these are immediate red flags in the way the five primary anti-patterns are. They are slower failure modes that emerge in production over six to eighteen months. Worth watching for; worth defending against deliberately.</p>
+<div class="callout callout-style-simple callout-tip callout-titled" title="Named takes">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Named takes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><em>Wrapper-washing is the dominant marketing pattern of 2026. The five-attribute scorecard is your defense.</em></p>
+<p><em>Confidence scores from agentic OCR systems are an opinion the model has about its own work. Treat them as you would any other unverified opinion.</em></p>
+<p><em>The most expensive 2026 mistake is conflating extraction with reasoning. DABstep is the reminder. The bottleneck is rarely where the team first looks.</em></p>
+</div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../chapters/12-rag.html" class="pagination-link" aria-label="Agentic OCR and RAG">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">Agentic OCR and RAG</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../chapters/14-limitations.html" class="pagination-link" aria-label="What Agentic OCR Doesn't Solve">
+        <span class="nav-page-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">What Agentic OCR Doesn’t Solve</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/anujsadani/agentic-ocr/edit/main/chapters/13-anti-patterns.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/anujsadani/agentic-ocr/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
