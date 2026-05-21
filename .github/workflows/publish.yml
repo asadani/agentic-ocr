@@ -1,8 +1,11 @@
 name: Render and Publish
 
 on:
-  push:
-    branches: [main]
+  # Auto-trigger on push to main is disabled until the CI render
+  # hang is debugged (Mermaid SVG step stalled even with Chromium
+  # pre-installed). For now, run manually via the Actions tab or by
+  # rendering locally with `quarto render` and pushing `_book/` to
+  # the gh-pages branch.
   workflow_dispatch:
 
 permissions:
