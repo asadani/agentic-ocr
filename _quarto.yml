@@ -73,6 +73,15 @@ format:
     number-sections: true
     fig-cap-location: bottom
     tbl-cap-location: top
+    include-in-header:
+      text: |
+        // Tighten tables: smaller font, no justification (kills hyphenated splits
+        // and rivers inside narrow cells), tighter line spacing.
+        #show table: it => {
+          set text(size: 9.5pt)
+          set par(justify: false, leading: 0.55em)
+          it
+        }
 
 execute:
   freeze: auto

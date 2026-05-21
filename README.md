@@ -32,6 +32,26 @@ quarto render          # builds HTML book + PDF into _book/
 quarto preview         # live-reload server while writing
 ```
 
+## Deploying
+
+Deploys are currently **manual** (local-render + push to `gh-pages`). The GitHub
+Actions workflow is in the repo but disabled (`workflow_dispatch` only) — the
+Quarto render step hangs on Mermaid SVG generation in CI for reasons that have
+resisted debugging, while it completes in ~60 seconds locally.
+
+```bash
+./scripts/deploy.sh
+```
+
+That script:
+1. Patches the cached Typst `orange-book` template to neutralize its forced
+   odd-page chapter breaks (which otherwise insert blank verso pages).
+2. Runs `quarto render`.
+3. Pushes the rendered `_book/` to the `gh-pages` branch.
+
+The patch is idempotent and re-applied on every run, so it survives any cache
+refreshes Quarto does.
+
 ## Project layout
 
 ```
