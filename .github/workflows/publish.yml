@@ -20,7 +20,14 @@ jobs:
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
 
+      - name: Set up Chromium (for Mermaid SVG rendering in PDF)
+        uses: browser-actions/setup-chrome@v1
+        id: setup-chrome
+
       - name: Render book (HTML + PDF via Typst)
+        env:
+          PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+          PUPPETEER_SKIP_DOWNLOAD: "true"
         run: quarto render
 
       - name: Deploy to GitHub Pages
