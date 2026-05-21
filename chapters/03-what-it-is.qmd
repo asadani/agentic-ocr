@@ -1,0 +1,65 @@
+# What Agentic OCR Actually Is {#sec-what-it-is}
+
+::: {.callout-note title="Executive summary" appearance="simple"}
+- *(Phase C)*
+:::
+
+::: {.callout-tip title="Drafter guidance" appearance="minimal"}
+Target ~3,000 words. See `research/00-book-outline.md` Chapter 3. The five-attribute scorecard is the load-bearing artifact of this chapter — it gets referenced by every later chapter.
+:::
+
+## Definition
+
+- Working definition (single sentence): *Agentic OCR is a document-processing system that is goal-driven, multi-pass, self-correcting, tool-using, and grounded.*
+- All five attributes must be present. Three of five is "VLM with retries," not agentic OCR.
+- Why the definition matters: the term is being load-bearing in 2026 marketing and procurement decisions.
+
+## The five attributes
+
+### Goal-driven
+
+- Operates against a **structured target** (a schema, an extraction goal, a downstream contract), not just "extract the text."
+- Plan-then-execute behavior. The system can articulate what it's looking for before it looks.
+- Anti-pattern: a model that emits markdown and hopes the downstream system figures it out.
+
+### Multi-pass
+
+- Iterates rather than emits-and-exits. At least one self-review pass.
+- Includes the possibility of re-extraction with revised strategy (not just re-running the same prompt).
+- The "loop" is not optional. A single-pass VLM is not agentic, even if it scores well.
+
+### Self-correcting
+
+- Three subsystems: **detection** (knowing you're wrong), **repair** (fixing it), **escalation** (failing safely). Full treatment in Chapter 5.
+- Crucial: detection without ground truth is a model talking to itself. Real self-correction needs an external oracle (tool output, schema validation, or HITL).
+
+### Tool-using
+
+- Invokes specialized tools: layout detectors, table extractors, OCR for region, schema validators, external lookups (KB, normalization).
+- Why this matters: leaderboards in 2026 show specialization beats generality at the high-stakes margin (Reducto on RD-TableBench, PP-StructureV3 at <100M params).
+- Tool-using ≠ "the LLM has access to a function call." It means the model **routinely** invokes tools as part of its workflow, and the workflow is designed around that.
+
+### Grounded
+
+- Every output field can be traced back to a region of the source document.
+- Why this matters beyond compliance: grounding is what makes self-correction's *detection* step possible. You cannot critique an answer you cannot localize.
+- ParseBench's grounding dimension and Reducto's hybrid architecture both treat grounding as load-bearing, not optional.
+
+## What it is not
+
+- **Classic OCR with a confidence threshold.** Confidence gating is a feature of agentic OCR, not the definition.
+- **A single-pass VLM.** Even GPT-4V on a document is not agentic; it is one extraction call.
+- **Template-bound IDP with an LLM cleanup step.** This is wrapper-washing (Chapter 13). The template is still load-bearing; the LLM is decoration.
+- **An LLM with one function-calling tool.** Tool-using means routinely-orchestrated, not technically-possible.
+
+## The five-attribute scorecard
+
+A 5-row, 3-column comparator (classic OCR / single-pass VLM / true agentic) marking each attribute Yes / No / Partial. Use this everywhere a vendor demo claims "agentic" and you want a defensible counter.
+
+*(Table to be rendered from inline data in Phase C.)*
+
+## Named takes
+
+> *"'Agentic' is the word that lets people charge 10× for a retry loop. The five-attribute test exists so you don't get fooled."*
+
+> *"Grounding is the line. If your system can't point at the pixels that produced a field, it isn't doing agentic OCR — it's doing confident hallucination."*

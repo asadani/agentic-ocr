@@ -1,0 +1,65 @@
+# Anti-Patterns and Misconceptions {#sec-anti-patterns}
+
+::: {.callout-note title="Executive summary" appearance="simple"}
+- *(Phase C)*
+:::
+
+::: {.callout-tip title="Drafter guidance" appearance="minimal"}
+Target ~4,000 words. See `research/00-book-outline.md` Chapter 13. Open with the demo where "99% accuracy" means the prompt included the answers. Five anti-patterns; each one gets a smell test.
+:::
+
+## Wrapper-washing
+
+- The pattern: a Tesseract pipeline (or AWS Textract, or any classic OCR) with an LLM cleanup step, rebranded as "agentic OCR."
+- Why it works as marketing: the five-attribute checklist is not common knowledge.
+- **Smell test:** does the system satisfy the five-attribute scorecard from Chapter 3? Goal-driven, multi-pass, self-correcting, tool-using, grounded — all five? If not, it's a wrapper.
+- The most common wrapper-washing failure: missing **tool-using**. A model with a `parse_pdf()` function call is not tool-using. Tool-using is routine orchestration with specialized tools the model invokes throughout the workflow.
+
+## Schema rigidity
+
+- The pattern: agentic OCR forced to produce a fixed schema, with no flexibility for unexpected fields or document variations.
+- The lost capability: agentic OCR's strength is handling **schema-flexible** extraction — extracting whatever the document contains, not whatever your schema demands.
+- **Smell test:** when a document has an extra field your schema doesn't include, does the system (a) drop it silently, (b) emit it in a flexible "extra" container, or (c) refuse to process?
+  - Option (a) is the failure mode. Most teams discover it only after a compliance incident.
+- The fix: schema-aware **but not schema-bound** extraction. Capture extras. Flag schema mismatches as warnings, not errors.
+
+## Ignoring HITL
+
+- The pattern: building agentic OCR with no human-review gate. The reflection loop alone is presented as the safety net.
+- Why this fails: the reflection loop has no external oracle (Chapter 5). It cannot catch silent hallucinations. **Some errors require human eyes.**
+- **Smell test:** when the system outputs a high-confidence answer that is wrong, what happens next?
+  - If "nothing — the answer ships," you have an ignoring-HITL problem.
+- The fix: every high-stakes field gets a HITL gate. Escalation rates should be 1–10%, not 0%.
+
+## Over-relying on confidence scores
+
+- The pattern: production gating logic that treats VLM-emitted confidence as a calibrated probability.
+- Why this fails: confidence scores from VLMs are not probabilities. They are an ordinal signal at best, often poorly correlated with actual accuracy on out-of-distribution data.
+- **Smell test:** plot confidence vs. accuracy on your golden set. Is the curve smooth and monotone? If not, treat confidence as ordinal.
+- The fix: use confidence as one input to gating, not the gate itself. Cross-validate with schema validation, KB lookup, secondary-model opinions.
+
+## Conflating extraction with reasoning
+
+- The pattern: assuming that because extraction is correct, downstream reasoning will be correct.
+- The DABstep result demolishes this assumption: frontier reasoning models reach only **~14.55% on hard tasks** even when documents are parsed correctly.
+- **Smell test:** if a downstream agent fails on a multi-document query, is the failure in extraction or in reasoning? Ablate.
+  - If extraction is perfect and reasoning still fails, you have a reasoning problem, not a parsing problem.
+- The fix: keep parsing and reasoning evals **separate**. They are separate problems. They have separate failure modes. They require separate fixes.
+
+## A short checklist for your own architecture
+
+Print this. Use it. The five tests, one each:
+
+1. **Wrapper test:** Does the system satisfy all five attributes? (Goal-driven, multi-pass, self-correcting, tool-using, grounded.)
+2. **Schema-flexibility test:** What does the system do with an unexpected field?
+3. **HITL test:** What happens to a confident-but-wrong output?
+4. **Calibration test:** Is the confidence-vs-accuracy curve monotone?
+5. **Decomposition test:** When a downstream answer is wrong, can you tell whether parsing or reasoning was at fault?
+
+If you fail any of these, your "agentic OCR" deployment is one of the anti-patterns. Fix the system, not the marketing.
+
+## Named takes
+
+> *"Wrapper-washing is the dominant marketing pattern of 2026. The five-attribute scorecard is your defense."*
+
+> *"Confidence scores from agentic OCR systems are an opinion the model has about its own work. Treat them as you would any other unverified opinion."*

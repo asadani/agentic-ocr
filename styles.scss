@@ -1,0 +1,51 @@
+/*-- scss:defaults --*/
+
+// Typography
+$font-family-sans-serif: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+$font-family-serif: "Source Serif Pro", Georgia, "Times New Roman", serif;
+$font-family-monospace: "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+
+// Body uses serif for long-form reading; headings stay sans
+$font-family-base: $font-family-serif;
+$headings-font-family: $font-family-sans-serif;
+$headings-font-weight: 600;
+
+// Slightly larger body, comfortable line height
+$font-size-base: 1.05rem;
+$line-height-base: 1.65;
+
+// Accent color: a muted, technical teal
+$primary: #0e7c7b;
+$link-color: #0e7c7b;
+
+// Subtle background
+$body-bg: #fafaf7;
+
+/*-- scss:rules --*/
+
+// Callout polish
+.callout-note {
+  border-left-color: $primary !important;
+}
+
+// Tighter table styling
+table {
+  font-size: 0.95rem;
+}
+
+// Mermaid diagrams: center and constrain
+.mermaid {
+  text-align: center;
+  margin: 1.5rem 0;
+}
+
+// Code blocks: a little breathing room
+pre.sourceCode {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+}
+
+// Sidebar tightening
+.sidebar-item-text {
+  font-size: 0.92rem;
+}

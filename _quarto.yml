@@ -1,0 +1,89 @@
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: "Agentic OCR in 2026"
+  subtitle: "An opinionated practitioner's field guide"
+  author: "Anuj Sadani"
+  date: "2026-05-21"
+  date-format: "MMMM YYYY"
+  search: true
+  repo-url: https://github.com/anujsadani/agentic-ocr
+  repo-actions: [edit, issue]
+  downloads: [pdf]
+  sharing: [twitter, linkedin]
+  sidebar:
+    style: docked
+    background: light
+  chapters:
+    - index.qmd
+    - part: "Part I — Foundations"
+      chapters:
+        - chapters/01-introduction.qmd
+        - chapters/02-history.qmd
+        - chapters/03-what-it-is.qmd
+    - part: "Part II — Architecture"
+      chapters:
+        - chapters/04-architecture.qmd
+        - chapters/05-self-correction.qmd
+        - chapters/06-shift-left.qmd
+    - part: "Part III — The 2026 Landscape"
+      chapters:
+        - chapters/07-commercial-players.qmd
+        - chapters/08-opensource-players.qmd
+        - chapters/09-vendor-selection.qmd
+    - part: "Part IV — Evaluation & Integration"
+      chapters:
+        - chapters/10-benchmarks.qmd
+        - chapters/11-evaluating-your-pipeline.qmd
+        - chapters/12-rag.qmd
+    - part: "Part V — Reality Check"
+      chapters:
+        - chapters/13-anti-patterns.qmd
+        - chapters/14-limitations.qmd
+        - chapters/15-conclusion.qmd
+  appendices:
+    - appendices/glossary.qmd
+    - appendices/bibliography.qmd
+    - appendices/cheatsheet.qmd
+
+bibliography: references.bib
+
+format:
+  html:
+    theme:
+      light: [cosmo, styles.scss]
+    code-copy: true
+    code-overflow: wrap
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    fig-cap-location: bottom
+    tbl-cap-location: top
+    mermaid:
+      theme: neutral
+  pdf:
+    documentclass: scrbook
+    classoption: [oneside]
+    papersize: a4
+    geometry:
+      - top=25mm
+      - bottom=25mm
+      - left=22mm
+      - right=22mm
+    toc-depth: 3
+    number-sections: true
+    colorlinks: true
+    fig-cap-location: bottom
+    tbl-cap-location: top
+    keep-tex: false
+    include-in-header:
+      text: |
+        \usepackage{microtype}
+        \usepackage{booktabs}
+        \usepackage{longtable}
+
+execute:
+  freeze: auto
+  echo: false

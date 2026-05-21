@@ -1,0 +1,37 @@
+# Introduction: The Agentic Turn {#sec-introduction}
+
+::: {.callout-note title="Executive summary" appearance="simple"}
+- *(Phase C — distill from the beats below)*
+:::
+
+::: {.callout-tip title="Drafter guidance" appearance="minimal"}
+Target ~2,000 words. Voice: opinionated practitioner. See `research/00-book-outline.md` Chapter 1 for the full beat sheet.
+:::
+
+## What changed
+
+- Open on a single concrete failure scene: a frontier agent reading a treasury bond, "$10,000" rendered as "$3,000," a downstream agent acting on the wrong number (Databricks example).
+- Establish the core thesis: *the bottleneck for agent quality in 2026 is not reasoning — it is reading.*
+- One-sentence definition of "agentic OCR" to anchor the rest of the book (full definition lives in Chapter 3).
+
+## Why 2026 matters
+
+- Cite the **67% adoption** number — enterprises evaluating agentic vs. classic IDP, up from 23% two years prior.
+- Note the structural forcing functions: CMS prior-auth transparency rule (March 2026), enterprise consolidation to one or two vendors per workflow, capital concentration.
+- Land the point that this book exists because the field crossed a threshold this year — vocabulary, vendor stability, and benchmark maturity are simultaneously sufficient.
+
+## Who this book is for
+
+- Two readers, one book. Implementers and decision-makers, sharing each chapter.
+- Each chapter opens with an executive callout; the technical body follows.
+- Skip-paths: foundations for newcomers, Part III for buyers, Part IV for integrators, Part V first for skeptics.
+
+## How to read this book
+
+- Five parts. Linear but skippable.
+- Pointer to glossary, cheatsheet, and bibliography in the appendices.
+- One paragraph on what the book is *not* — not a tutorial, not vendor-neutral, not stable forever.
+
+## Named take
+
+> *"If your agent can read perfectly but reason imperfectly, you have a model problem. If your agent reasons brilliantly on the wrong inputs, you have a document problem — and 2026 says the document problem is bigger."*

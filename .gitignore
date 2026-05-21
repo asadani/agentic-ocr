@@ -1,0 +1,45 @@
+# Quarto build outputs
+/_book/
+/_site/
+/.quarto/
+*.html
+!index.html
+*_files/
+*.aux
+*.log
+*.out
+*.toc
+*.tex
+*.synctex.gz
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.python-version
+
+# Node (in case Quarto pulls in any JS tooling)
+node_modules/
+package-lock.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# Local secrets / env
+.env
+.env.local
+
+# Renders
+*.pdf
+!_book/**/*.pdf
+
+**/*.quarto_ipynb

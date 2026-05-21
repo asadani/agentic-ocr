@@ -1,0 +1,31 @@
+# Quick-Reference Cheatsheet {#sec-cheatsheet}
+
+*(placeholder — assembled during Phase D as a one-page summary across the book)*
+
+## The five attributes
+
+1. Goal-driven
+2. Multi-pass
+3. Self-correcting
+4. Tool-using
+5. Grounded
+
+## The three architecture patterns
+
+| Pattern | Best for | Failure mode |
+|---|---|---|
+| Single-pass VLM | Simple, well-formed docs | Tables, complex layout |
+| Agentic loop | High-stakes extraction | Latency, cost-per-page |
+| Hybrid CV + VLM | High volume, varied layouts | Engineering complexity |
+
+## Vendor selection in one diagram
+
+*(placeholder — small version of the @sec-vendor-selection diagram)*
+
+## Benchmarks at a glance
+
+*(placeholder — one-row-per-benchmark summary)*
+
+## Anti-pattern smell tests
+
+*(placeholder — one-line tests for each anti-pattern)*

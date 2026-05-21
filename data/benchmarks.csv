@@ -1,0 +1,11 @@
+benchmark,year,maintainer,scale,languages,measures,top_score,top_model,strengths,gaps
+ParseBench,2026,LlamaIndex + Kaggle,~2000 pages / 167k+ rules,EN + multi,"Tables, charts, content, formatting, grounding",84.9%,LlamaParse Agentic,"Most comprehensive 2026 leaderboard; vendor-agnostic submission","Vendor-published; rule selection inevitably shapes results"
+OCRBench v2,2025,Multi-academic,10000+ QA pairs,EN + ZH,"Text recognition, layout, QA",N/A,Various,"Broad coverage; bilingual","Less relevant for structured-extraction contracts"
+olmOCR-Bench,2025,AllenAI,7000+ test cases / 1400 docs,EN,Output fidelity vs reference unit tests,83.1,Chandra (9B),"Reproducible unit-test style; clean diff/eval","English-only; annotations via closed-source VLMs"
+OmniDocBench v1.7,2026,OpenDataLab (CVPR),1651 pages + 296 hard subset,5 langs,"Layout, formulas, tables, HTML/LaTeX, reading order",N/A (saturated),Multiple within 1pp,"Strong on scientific content; multi-lingual; hard subset added Apr 2026","Saturated at top; top scores cluster within 1pp"
+RD-TableBench,2025,Reducto,1000 adversarial tables,EN,Table extraction (Needleman-Wunsch alignment),~0.90,Reducto,"Brutal table cases; PhD-annotated","Tables only; vendor-published"
+DABstep,2025,HF + Adyen,450 analysis questions,EN,Multi-step reasoning across packets,~14.55% (hard),o4-mini reasoning,"Tests reasoning + extraction together; uses real Adyen workloads","Embarrassingly low ceiling - field has not solved this"
+SCORE-Bench,2026,Unstructured.io,1000+ pages,EN,"Fidelity, structure, retrieval (interpretation-agnostic)",N/A,Various,"Built for generative parsers; separates representation diversity from real errors","New; less established"
+CC-OCR,2024,Multi-academic,Multilingual,EN + ZH + others,"Multilingual text recognition",N/A,Various,"Only multilingual large benchmark","Lower quality/diversity"
+OfficeQA,2026,Databricks + arXiv,Enterprise doc workflows,EN,Document reasoning accuracy,Below 50% (frontier agents),Various,"Real enterprise workflows; tests reasoning-on-documents","New; Databricks-published"
+DocVQA (LandingAI variant),2024,LandingAI internal,Internal,EN,Field-level QA,N/A,LandingAI,"Vendor-specific signal","Not public"

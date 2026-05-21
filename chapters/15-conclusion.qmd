@@ -1,0 +1,51 @@
+# Conclusion: Where 2027 Goes {#sec-conclusion}
+
+::: {.callout-note title="Executive summary" appearance="simple"}
+- *(Phase C)*
+:::
+
+::: {.callout-tip title="Drafter guidance" appearance="minimal"}
+Target ~2,500 words. See `research/00-book-outline.md` Chapter 15. The shortest chapter. Forecasts, not exhaustive coverage. One strong named take.
+:::
+
+## What's about to commoditize
+
+- **Parsing quality** is approaching saturation across both open and closed leaderboards. The top of olmOCR-Bench (Chandra 83.1, OlmOCR-2 82.3) is open-source and Apache/OpenRAIL-licensed.
+- The implication: by mid-2027, the parsing-quality gap between open-source and commercial will be negligible for English-language documents.
+- What commoditizes faster: single-pass VLMs, table extraction, basic structural understanding.
+- What commoditizes slower: grounding accuracy, multi-lingual coverage, scientific-document handling.
+
+## Where moats are forming
+
+- **Agentic orchestration platforms.** LlamaIndex, Landing AI ADE, Databricks Document Intelligence. Owning the workflow, not just the model.
+- **Compliance + grounding infrastructure.** Reducto's hybrid architecture with audit trails. Anterior AI's fairness eval methodology. ZDR commitments.
+- **Observability for document agents.** Currently a gap. The 2027 land-grab is for "Datadog for document agents" — instrumented, attributable, debuggable agentic workflows.
+- **Vertical specialization.** Healthcare (post-CMS rule), legal contract review, financial filings. Vendors that go deep on one vertical outperform horizontals.
+
+## Open research questions
+
+- **Empirical failure-mode taxonomies** from production deployments, not labs. The "Tiny Silent Hallucinations" paper is the start.
+- **Long-form benchmarks** beyond DABstep. The 14.55% ceiling on hard tasks is a five-alarm signal.
+- **Cost-aware evaluation.** Joint accuracy/cost/latency benchmarks. No public benchmark does this well yet.
+- **Calibrated confidence.** Out-of-distribution calibration on document VLMs remains an open problem.
+- **Reasoning-extraction separation.** How to evaluate them jointly without conflating their failure modes.
+
+## What to watch in 2027
+
+- A new benchmark that supersedes OmniDocBench. SCORE-Bench is the candidate.
+- Consolidation among classic IDP vendors. Several are likely M&A targets.
+- The first "agentic-OCR-as-foundation-model" play — a model trained from scratch with multi-pass extraction as the objective, not retrofitted from a general VLM.
+- Hyperscaler agentic OCR catching up. Google, AWS, and Azure are all building. Watch for major releases at re:Invent and Google Cloud Next 2027.
+- Open-source closing the orchestration gap — there is no production-grade open-source equivalent of LlamaParse Agentic. That will change.
+
+## Final word
+
+The 2024–2026 period was about proving that agentic OCR works. That work is done. The vendors exist; the benchmarks exist; the production deployments exist; the case studies exist.
+
+2027 is about making it **reliable enough to trust without checking**. That's a different problem. It is the observability problem, the calibration problem, the HITL-economics problem, and the long-form-reasoning problem — all at once.
+
+The thesis of this book is that **reading is the ceiling on agent quality, and reading is mostly solved**. The next ceiling is **trust**. That's the book to write next.
+
+## Named take
+
+> *"In 2027, nobody will talk about parsing accuracy. They will talk about agent observability. That's the wave that's about to break."*

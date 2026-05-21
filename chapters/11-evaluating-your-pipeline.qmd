@@ -1,0 +1,66 @@
+# Evaluating Your Own Pipeline {#sec-evaluating-pipeline}
+
+::: {.callout-note title="Executive summary" appearance="simple"}
+- *(Phase C)*
+:::
+
+::: {.callout-tip title="Drafter guidance" appearance="minimal"}
+Target ~4,500 words. See `research/00-book-outline.md` Chapter 11. Open with the team that picked by ParseBench and watched 8pp of accuracy disappear on Day 1.
+:::
+
+## Golden sets: the only thing that matters
+
+- The single most important investment in agentic OCR is a **golden set** that reflects your actual production distribution.
+- 200–500 hand-labeled documents is enough to start. Add 50/quarter as production evolves.
+- Build it with the same people who consume the output. The labels embed their judgment about "correct."
+- Why teams skip this: labeling is slow, expensive, and unglamorous. Why they regret it: vendor benchmarks don't match production, and there's no other ground truth.
+
+## Metric selection per domain
+
+- The wrong metric quietly destroys vendor selection. Match the metric to the downstream cost.
+- **Character Error Rate (CER):** correct for plain-text OCR. Wrong for structured extraction — penalizes formatting differences that don't matter.
+- **Field-level F1:** the default for extraction. Per-field precision/recall. Use this for invoices, forms, KYC.
+- **Table-cell accuracy:** needs alignment (Needleman-Wunsch, Hungarian). Jaccard is wrong; it doesn't respect cell position.
+- **Schema validity rate:** does the output parse as your downstream schema? Cheap to compute; surprisingly diagnostic.
+- **Grounding accuracy:** does the cited region actually contain the extracted value? Critical for compliance.
+- **Reasoning accuracy:** for DABstep-style downstream tasks. Often a separate eval from extraction.
+
+## Regression testing
+
+- Vendor versions change. Pin them.
+- Run your golden set against every new vendor version before production.
+- Track per-field accuracy over time. The aggregate may stay flat while a specific field silently degrades.
+- A regression-test cadence: weekly on a 50-doc subset, monthly on the full golden set, full re-eval on vendor major-version bumps.
+
+## HITL feedback loops
+
+- The HITL queue **is** part of your eval. Accept/reject rate by reviewers is the most honest production accuracy signal you have.
+- Closed-loop is the goal: reviewer corrections feed back into the golden set, into prompt tuning, into vendor selection.
+- Anti-pattern: HITL as a dead-letter queue with no feedback. The reviewers correct documents; the system never learns.
+
+## Grounding and auditability for compliance
+
+- Grounding is not a feature. For compliance work (healthcare, legal, finance), it is a **requirement** at eval time.
+- Every extracted field must be traceable to a source region. Audit logs must persist for retention windows (HIPAA: 6+ years).
+- ZDR (Zero Data Retention) commitments from vendors (Landing AI ADE, Mistral self-host) — verify in eval that ZDR is actually honored in production.
+
+## Cost-aware evaluation
+
+- Most teams report accuracy without cost; that's incomplete.
+- Track three numbers jointly: **accuracy**, **cost-per-page**, **HITL escalation rate**.
+- The number that predicts your monthly bill is **cost-per-correct-extraction-with-provenance**:
+  $$\text{cost-per-correct} = \frac{\text{API cost per page}}{\text{accuracy}} + \text{HITL cost} \times \text{escalation rate}$$
+- This number tells you whether the 5× cheaper parser is actually cheaper. Often it isn't.
+
+## When your eval is the bottleneck
+
+- If your eval is fast, your eval is suspicious. Real evals are slow.
+- If your eval is small (<100 docs), it can't reliably distinguish vendors within 5pp.
+- If your eval has no out-of-distribution slice, you don't know how the system fails on novel documents.
+- Investment in eval is almost always under-funded relative to investment in model selection. Reverse this.
+
+## Named takes
+
+> *"Golden sets are unfashionable, slow, and the single best ROI any agentic OCR team can deliver. Build one before you buy anything."*
+
+> *"If your eval is faster than your inference, your eval is wrong. Real evals are not fast."*

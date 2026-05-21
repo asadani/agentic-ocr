@@ -1,0 +1,102 @@
+# Open-Source Players {#sec-opensource-players}
+
+::: {.callout-note title="Executive summary" appearance="simple"}
+- *(Phase C)*
+:::
+
+::: {.callout-tip title="Drafter guidance" appearance="minimal"}
+Target ~5,500 words. See `research/00-book-outline.md` Chapter 8. Open with the October 2025 Hugging Face survey — that's the canonical source. Establish early that the open-source side has caught up on parsing quality.
+:::
+
+## The state of open-source agentic OCR
+
+- Headline claim: **by mid-2026, the open-source parsing-quality gap has closed.** The top of the olmOCR-Bench leaderboard (Chandra at 83.1) is open-source.
+- Three groups by parameter budget:
+  - **Heavyweight VLMs:** Chandra (9B), OlmOCR-2 (8B), Qwen3-VL (9B).
+  - **Efficient VLMs:** dots.ocr (3B), DeepSeek-OCR (3B), Nanonets-OCR2-3B (4B).
+  - **Compact specialists:** PaddleOCR-VL (0.9B), Granite-Docling-258M (258M), PP-StructureV3 (<100M).
+- The differentiator that remains: **agentic orchestration, HITL tooling, and grounding/audit infrastructure** — not raw extraction. Those are still primarily commercial.
+
+## IBM Granite-Docling and Docling
+
+- **Granite-Docling-258M** released January 2026, Apache-2.0.
+- Single 258M parameter VLM. Granite-3 LM backbone, SigLIP2 visual encoder.
+- Production successor to SmolDocling-256M-preview (March 2025 experimental release).
+- Trained on 81,000 manually-labeled pages (patents, manuals, 10-K filings). Within ~5pp of human accuracy on page-element ID.
+- The **DoclingDocument** format exports to Markdown, JSON, HTML, or DocTags.
+- The most production-credible open-source agentic OCR pick for 2026 enterprise deployment. Why: small, Apache-2.0, IBM-backed, unified output representation.
+- Docling (the framework, MIT) is the glue layer — pipeline orchestration around Granite-Docling and other models.
+
+## OpenDataLab MinerU and MonkeyOCR
+
+- **MinerU 2.5** (1.2B params, AGPL-3.0): excellent on scientific PDFs. AGPL license excludes some commercial deployments — this is a real procurement issue.
+- **MonkeyOCR v1.5** (Nov 2025): SOTA on OmniDocBench v1.5. Beats PP-OCR-VL by 0.15% and MinerU 2.5 by 2.34% on OmniDocBench. **+8.2% over PP-OCR-VL on OCRFlux-complex** (complex-layout dataset). arXiv 2511.10390 for the technical report.
+- These are research-quality systems. Production-readiness varies; deploy with eval discipline.
+
+## AllenAI olmOCR (and OlmOCR-2)
+
+- **OlmOCR-2** (8B, Apache-2.0). olmOCR-Bench: 82.3 ± 1.1.
+- Cost anchor: ~**$178 per million pages** on an H100 at $2.69/hr.
+- Strong on English. Optimized for batch processing.
+- The olmOCR-Bench (also maintained by AllenAI) is the most useful unit-test-style benchmark in the open ecosystem — but English-only.
+
+## The new generation: Chandra, dots.ocr, DeepSeek-OCR
+
+- **Chandra** (DataLab-to, 9B, OpenRAIL): **top of olmOCR-Bench at 83.1**. 40+ languages. Grounding + image extraction. The current open-source quality leader for English-heavy work.
+- **dots.ocr** (Rednote-hilab, 3B): olmOCR-Bench 79.1. Strong on grounding + handwriting.
+- **DeepSeek-OCR** (3B): ~100 languages, ~200k+ pages/day on a single A100. Chart and table re-rendering to HTML — a useful primitive for downstream RAG.
+
+## PaddleOCR / PP-StructureV3
+
+- The most striking 2026 data point: **PP-StructureV3 achieves OmniDocBench edit distance 0.145 EN / 0.206 ZH at <100M parameters.** Matches Gemini-2.5-Pro accuracy.
+- **PaddleOCR-VL** (0.9B, Apache-2.0): 109 languages, prompt-based, Markdown/JSON/HTML output.
+- The lesson: smaller, layout-aware models can outperform much larger general VLMs on structured-extraction tasks. This is the strongest argument for "shift-left without scale-up."
+- Caveat: smaller Western community than other open-source ecosystems. English documentation has improved sharply through 2025.
+
+## Qwen3-VL and the general-VLM-as-OCR option
+
+- Qwen3-VL (9B, open): general VLM, not OCR-specialized.
+- Strong on: ancient text recognition, handwriting, image extraction, chart understanding. 32 languages.
+- Weak on: character-perfect transcription.
+- The right use case: documents where **understanding meaning** matters more than perfect character fidelity. Charts, screenshots, diagrams, mixed visuals.
+
+## NuExtract (NuMind) — separating extraction from OCR
+
+- The NuExtract series is **not OCR**. It is structured extraction (document/text → JSON) that runs after a parser.
+- NuExtract 1.5: multilingual; beats GPT-4o on EN while being ~500× smaller.
+- NuExtract 2.0 (May 2025): vision + abstraction + ICL. Open variants 2B–8B.
+- **NuExtract 2.0 PRO**: API; **+9 F-score over GPT-4.1** on extraction.
+- NuExtract3 (2026): latest in the series.
+- Why include them: they make a clean argument that **extraction is a separate layer from parsing**. Vendors that bundle both (LlamaParse, ADE) may not always win on the extraction sub-problem.
+
+## The throughput contenders
+
+- **LightOnOCR-1B** (LightOn AI): claims **493k pages/day on a single H100**. The throughput record-holder among open models. Newer; less production validation.
+- **DeepSeek-OCR**: ~200k+ pages/day on a single A100.
+- **PaddleOCR-VL**: highest throughput in the HF survey for sub-billion-param models.
+- The throughput numbers matter for self-hosted at-scale workloads. They are the hidden ROI lever — if you can fit a model on your hardware and feed it documents, per-page cost drops by an order of magnitude vs. API.
+
+## Tesseract + agent wrappers — when this is still the right answer
+
+- Yes, sometimes. Use case: very high volume, clean English text, low-stakes, minimal layout variation. Examples: invoice line-items at scale, scanned books for indexing.
+- Tesseract is **not agentic** by itself. Anyone marketing a "Tesseract + LLM cleanup" pipeline as agentic OCR is wrapper-washing (Chapter 13).
+- The honest version: Tesseract as a primitive in a hybrid CV+VLM pipeline (Pattern C) — that's a legitimate use.
+
+## Capability / license matrix
+
+*(Render from `data/opensource-players.csv` in Phase C. Add columns for: olmOCR-Bench score where available, output formats, throughput claims.)*
+
+## When to choose open-source over commercial
+
+- **Data sovereignty / regulatory:** the document never leaves your network. Open-source wins by default.
+- **Per-page cost dominated by API spend:** if you process >1M pages/month, self-hosting pays for itself fast (OlmOCR-2 at ~$178/M pages vs. Mistral OCR 3 at ~$1,000–$2,000/M pages).
+- **Engineering capacity:** open-source assumes you can operate model serving, eval pipelines, and HITL workflows. If you can't, the commercial tier earns its margin.
+- **Auditability requirements:** open-source models you can inspect; commercial models are often black boxes. For compliance-heavy industries (healthcare, legal), this can be decisive.
+
+## Named takes
+
+> *"By the end of 2026, the open-source parsing-quality gap is closed. The reason you'll still pay for commercial agentic OCR is that nobody wants to operate the orchestration, HITL queues, and audit infrastructure themselves."*
+
+> *"PaddleOCR-VL at 0.9B params matching Gemini-2.5-Pro on OmniDocBench is the most important data point in 2026 open-source OCR. Read it again."*
+
+> *"NuExtract is the proof that 'agentic OCR' is two problems pretending to be one. Parsing and extraction are separable, and the vendor that bundles them at a premium is often charging you twice for one engineering team."*

@@ -1,0 +1,52 @@
+# A Short History of Document Processing {#sec-history}
+
+::: {.callout-note title="Executive summary" appearance="simple"}
+- *(Phase C)*
+:::
+
+::: {.callout-tip title="Drafter guidance" appearance="minimal"}
+Target ~3,000 words. See `research/00-book-outline.md` Chapter 2 for the beat sheet. Four-era structure; each era ends with a clean handoff to the next.
+:::
+
+## The classic OCR era (1990s–2010s)
+
+- Tesseract's 2005 open-sourcing as the inflection point. The assumption baked in: text is a stream of characters in a known layout.
+- The cottage industry of layout-detection libraries, denoising, deskewing, and language-specific tuning that grew around character recognition.
+- Why classic OCR plateaued: enterprise documents are not streams of characters. They are nested structures with semantic dependencies between regions.
+
+## ICR and template-driven IDP (2010s)
+
+- ICR (intelligent character recognition) — handwriting and printed-form fields. Templates as the dominant pattern: vendor maps known fields to known regions.
+- ABBYY, Hyperscience, and the early IDP era — strong on invoices, brittle on variation.
+- Why templates collapsed in production: every new vendor adds a new template; every layout change breaks every template. The cost is in maintenance, not initial accuracy.
+
+## The single-pass VLM era (2022–2024)
+
+- GPT-4V, Donut, LayoutLMv3 — the moment OCR + layout + understanding collapsed into one model call.
+- What single-pass VLMs got right: ad-hoc layouts, semantic understanding, robustness to format change.
+- What they got wrong: tables (still), grounding (variable), confidence (theatre), reasoning over multi-page documents.
+
+## The agentic turn (2024–2026)
+
+- The shift from "model returns answer" to "model plans, extracts, critiques, retries, validates, escalates."
+- Five attributes — preview here, full definition in Chapter 3.
+- 2024 OCR-Agent paper (arXiv 2602.21053) as a canonical reference.
+- 2026 production deployments: Anterior AI + Reducto reaching 99.24% on prior-auth; Databricks Document Intelligence GA; Granite-Docling production release.
+
+## Timeline
+
+```{mermaid}
+%%| fig-cap: "Document-processing evolution, 1990–2026"
+timeline
+    title Document Processing Evolution
+    1990s : Classic OCR (Tesseract era) : Character-level, layout-blind
+    2000s : Forms recognition : Template-driven extraction
+    2010s : ICR + IDP : ML classifiers, layout models, templates
+    2022  : Single-pass VLMs : GPT-4V, Donut, LayoutLMv3
+    2024  : Agentic loops : Reflection, tool use, HITL gates
+    2026  : Production agentic OCR : ParseBench, Granite-Docling, ADE, Reducto
+```
+
+## Named take
+
+> *"Each generation of document processing eliminates the previous generation's most expensive engineering — and creates a new expensive engineering category in its place. Anyone telling you agentic OCR eliminates pipeline work is selling you a screenshot of the demo."*

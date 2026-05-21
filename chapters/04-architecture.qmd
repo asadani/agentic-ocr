@@ -1,0 +1,86 @@
+# Architecture Patterns {#sec-architecture}
+
+::: {.callout-note title="Executive summary" appearance="simple"}
+- *(Phase C)*
+:::
+
+::: {.callout-tip title="Drafter guidance" appearance="minimal"}
+Target ~5,000 words. See `research/00-book-outline.md` Chapter 4. Open with a real production architecture (Anterior AI + Reducto on prior-auth, 99.24% accuracy). The three patterns + decision tree are the load-bearing artifacts.
+:::
+
+## The three reference architectures
+
+### Pattern A: Single-pass VLM
+
+```{mermaid}
+%%| fig-cap: "Single-pass VLM architecture"
+flowchart LR
+    A[Document image] --> B[VLM]
+    B --> C[Structured output]
+```
+
+- When this works: well-formed PDFs, small variety, low stakes, simple schemas.
+- When this fails: tables (consistently), dense layouts, long documents, anything requiring cross-region reasoning.
+- Cost profile: lowest per-page. Highest cost-per-correct-extraction in high-variability workloads.
+- Representative examples: hyperscaler APIs in their default mode; Qwen3-VL used naively.
+
+### Pattern B: Agentic loop with reflection
+
+```{mermaid}
+%%| fig-cap: "Agentic loop with reflection"
+flowchart LR
+    A[Document] --> B[Plan]
+    B --> C[Extract pass]
+    C --> D{Confidence ok?}
+    D -- No --> E[Reflect / re-prompt]
+    E --> C
+    D -- Yes --> F[Validate]
+    F --> G{Schema ok?}
+    G -- No --> E
+    G -- Yes --> H[Output + provenance]
+```
+
+- The "default" 2026 architecture for general-purpose agentic OCR.
+- Plan → extract → critique → re-prompt → validate, with retry budgets and explicit confidence gates.
+- Representative examples: LlamaParse Agentic / Agentic Plus, Landing AI ADE, Mistral OCR 3.
+- Failure modes: silent hallucinations (the reflect step approves a wrong answer), retry-budget thrashing, unbounded latency.
+
+### Pattern C: Hybrid CV + VLM (Reducto-style)
+
+```{mermaid}
+%%| fig-cap: "Hybrid CV + VLM architecture"
+flowchart LR
+    A[Document] --> B[Layout detector / CV]
+    B --> C[Region routing]
+    C --> D1[Text blocks → OCR]
+    C --> D2[Tables → table extractor]
+    C --> D3[Figures → VLM]
+    D1 & D2 & D3 --> E[Assembler]
+    E --> F[Validator]
+    F --> G[Output]
+```
+
+- Layout-first segmentation, route to specialized extractors, assemble, validate.
+- State-of-the-art on adversarial tables: Reducto ~0.90 similarity on RD-TableBench, ~20pp ahead of hyperscalers.
+- Representative examples: Reducto; IBM Granite-Docling + Docling ensemble pipelines; PP-StructureV3 lineage.
+- Engineering cost is real: more components, more failure surface, more eval surface. Pays off on high-stakes, high-variability workloads.
+
+## Tool chains, memory, and HITL gates
+
+- Tool inventory in a production agentic OCR system: layout detector, table extractor, schema validator, KB lookup, redaction, classification, fallback OCR.
+- Memory: short-term (page-local context) vs. long-term (cross-document priors, vendor-specific corrections from HITL).
+- HITL gates: where they go in the loop (post-validation, pre-output), how they feed back into memory, how their accept/reject rate becomes the production accuracy signal (Chapter 11).
+
+## Choosing between the three patterns
+
+- Decision-tree diagram (refined version of the one in Chapter 9).
+- The two axes that matter: **document variability** (narrow vs. wide) and **stakes** (low vs. high).
+- Narrow + low: Pattern A is fine.
+- Wide + low: Pattern B.
+- High stakes (any variability): Pattern C with HITL.
+
+## Named takes
+
+> *"If your architecture has no place for a table-specific tool, you're betting the model is uniformly good at everything. Twelve months of leaderboards say it isn't."*
+
+> *"Hybrid CV+VLM is winning the table benchmarks for the same reason ensembles win on tabular ML: specialization beats generality where the distribution is narrow and the stakes are high."*

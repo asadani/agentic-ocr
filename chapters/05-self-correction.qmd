@@ -1,0 +1,72 @@
+# Self-Correction: What It Means and What It Doesn't {#sec-self-correction}
+
+::: {.callout-note title="Executive summary" appearance="simple"}
+- *(Phase C)*
+:::
+
+::: {.callout-tip title="Drafter guidance" appearance="minimal"}
+Target ~4,000 words. See `research/00-book-outline.md` Chapter 5. Open with the OpenReview *"Tiny Silent Hallucinations in Agentic AI"* paper — the field's most under-discussed 2026 result.
+:::
+
+## What "self-correcting" actually means
+
+- Self-correction decomposes into three concrete subsystems, not one capability:
+  - **Detection** — knowing you're wrong.
+  - **Repair** — fixing it.
+  - **Escalation** — failing safely to HITL when detection or repair can't close the loop.
+- Most production failures are **detection failures**, not repair failures. The model never noticed.
+- The standard marketing pitch — "the model corrects its own mistakes" — collapses all three into one. The vendors that take production seriously instrument all three separately.
+
+## The reflection loop, mechanically
+
+```{mermaid}
+%%| fig-cap: "Reflection loop with confidence gating"
+flowchart TD
+    A[Extraction] --> B[Self-critique]
+    B --> C{Confidence above threshold?}
+    C -- Yes --> D[Output]
+    C -- No --> E{Retries left?}
+    E -- Yes --> F[Re-prompt with critique]
+    F --> A
+    E -- No --> G[Escalate to HITL]
+```
+
+- The retry budget is a real engineering parameter, not magic. Typical values: 2–4 retries before escalation.
+- The confidence threshold is calibrated, not chosen. Calibration data needs to match production distribution.
+- A reflection loop **with no external oracle** is a model becoming more confident in its first answer.
+
+## Confidence gating: real vs. theatre
+
+- Confidence scores from VLMs are not calibrated probabilities. They are an ordinal signal at best.
+- The classic failure mode: high-confidence wrong answers. Model is wrong, model is confident, threshold-based gating passes the answer through.
+- What real confidence gating needs: an **external oracle** — schema validator, layout cross-check, KB lookup, or a different model's opinion.
+- The Databricks "$10,000 → $3,000" hallucination is a textbook high-confidence-wrong failure. The loop didn't catch it because the loop didn't know the right answer.
+
+## A failure taxonomy
+
+A 3×N matrix of failure modes, grouped by which subsystem broke.
+
+- **Detection failures:**
+  - Silent hallucination — model is wrong, model doesn't notice.
+  - Confidence-score miscalibration — model is unsure but reports high confidence.
+  - Out-of-distribution blindness — document is unlike training data, model doesn't realize it.
+- **Repair failures:**
+  - Repair-thrash — every retry produces a different wrong answer.
+  - Reflection drift — the critique itself drifts further from truth across iterations.
+- **Escalation failures:**
+  - No HITL path — the model escalates to a queue that nobody monitors.
+  - Wrong-stakes escalation — the system escalates everything (HITL overload) or nothing (silent acceptance).
+
+(See research notes section 10 for production-incident retrospective sources.)
+
+## What self-correction does not do
+
+- Does not fix **bad source documents**. Garbage in is still garbage out, just with more API calls.
+- Does not detect **missing semantic context**. An invoice that's missing a field is correctly extracted as "this field is missing." Whether the field *should* exist is a different judgment.
+- Does not provide a **safety net** for high-stakes decisions. HITL still belongs there. The reflection loop reduces HITL volume, it does not replace HITL.
+
+## Named takes
+
+> *"Self-correction is not 'the model will figure it out.' It is three concrete subsystems — detection, repair, escalation. If your vendor talks about it as one thing, they have one of the three working."*
+
+> *"A reflection loop with no out-of-loop ground truth is a model becoming more confident in its first answer. Call it what it is."*

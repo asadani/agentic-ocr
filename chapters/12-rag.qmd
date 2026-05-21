@@ -1,0 +1,71 @@
+# Agentic OCR and RAG {#sec-rag}
+
+::: {.callout-note title="Executive summary" appearance="simple"}
+- *(Phase C)*
+:::
+
+::: {.callout-tip title="Drafter guidance" appearance="minimal"}
+Target ~4,500 words. See `research/00-book-outline.md` Chapter 12. Open with the RAG system scoring 92% on internal eval and 41% in production — the eval has no table questions.
+:::
+
+## Why bad parsing kills RAG silently
+
+- Retrieval returns plausible-looking chunks. The generator answers from them. The answer is wrong. The system has no way to know.
+- The failure is invisible because RAG's internal metrics (retrieval precision, generation BLEU) all look fine. The metric that breaks (user-facing answer correctness) is rarely measured.
+- The compounding effect: each step in parsing → chunking → embedding → retrieval has a small failure rate. Their product is large.
+
+## The parsing → chunking → embedding → retrieval chain
+
+```{mermaid}
+%%| fig-cap: "How agentic OCR feeds the RAG pipeline"
+flowchart LR
+    A[Document] --> B[Agentic OCR<br/>+ structural metadata]
+    B --> C[Semantic chunking<br/>section-aware]
+    C --> D[Embedding]
+    D --> E[Vector store]
+    F[Query] --> G[Retriever]
+    E --> G
+    G --> H[LLM]
+    H --> I[Answer + citation back to B]
+```
+
+- Each step has compounding failure modes:
+  - **Parsing:** drops tables, misreads numbers, loses structure.
+  - **Chunking:** if it doesn't know about structure, it splits across semantic boundaries.
+  - **Embedding:** embeddings of broken chunks are silently bad.
+  - **Retrieval:** retrieves bad chunks with high confidence.
+  - **Generation:** answers from bad chunks fluently.
+- A failure in any step is invisible to the next.
+
+## How agentic OCR helps RAG, concretely
+
+Three load-bearing contributions:
+
+- **Structural metadata.** Parser emits heading hierarchy, section labels, page references. Chunker uses these to chunk semantically. The result: a chunk is a section, not a window.
+- **Table awareness.** Tables get chunked as units, with cell relationships preserved (DocTags, HTML tables with rowspan/colspan). Embedding a table cell out of context is much worse than embedding a complete table.
+- **Grounding back to source.** Every chunk carries pointers to source regions. The generator can cite. Compliance audit can verify. Users can verify.
+
+## Contextual drift, and how good parsing fixes it
+
+- Contextual drift: information that's correct in context becomes wrong when retrieved out of context. A footnote that says "amounts in thousands" becomes invisible when the table row is retrieved alone.
+- Bad parsing strips context. Good parsing preserves it via structural metadata.
+- The pattern: emit chunks that **always include their parent context** — section heading, footnote scope, units of measurement.
+
+## Reference patterns
+
+- **Section-aware chunking:** chunks are sections (or sub-sections), not fixed-window slices.
+- **Table-preserving chunking:** tables are atomic chunks. Don't split.
+- **Hierarchical retrieval:** retrieve at the section level first, then at the chunk level within retrieved sections.
+- **Grounded answer with citations:** the generator returns the answer plus the chunk IDs it used; the UI shows the source region.
+
+## When OCR is NOT your RAG bottleneck
+
+- If your documents are clean, structured native PDFs or HTML, the bottleneck is probably retrieval, not parsing. **Diagnose before you upgrade.**
+- Cheap diagnostic: take 50 user queries, hand-trace the chain. Where did each failure originate? If <30% are parsing failures, parsing isn't your bottleneck.
+- Investing in agentic OCR when your bottleneck is retrieval is a $100k–$500k mistake (per the DABstep result — extraction can be perfect and answers can still be wrong).
+
+## Named takes
+
+> *"RAG eval that doesn't include questions whose answer requires a table is RAG eval that lies. Tables are 30%+ of enterprise document content and 80%+ of the parsing errors."*
+
+> *"'Better OCR will fix our RAG' is sometimes true and sometimes a $500k mistake. Run the ablation first."*

@@ -1,0 +1,33 @@
+# Glossary {#sec-glossary}
+
+*(placeholder — will be built during Phase D from terms used across chapters)*
+
+**Agentic OCR**
+: *(definition)*
+
+**Confidence gating**
+: *(definition)*
+
+**Grounding**
+: *(definition)*
+
+**HITL (Human-in-the-loop)**
+: *(definition)*
+
+**IDP (Intelligent Document Processing)**
+: *(definition)*
+
+**Reflection loop**
+: *(definition)*
+
+**Shift-left**
+: *(definition)*
+
+**Single-pass VLM**
+: *(definition)*
+
+**VLM (Vision-Language Model)**
+: *(definition)*
+
+**Wrapper-washing**
+: *(definition)*

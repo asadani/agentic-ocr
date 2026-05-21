@@ -1,0 +1,33 @@
+# Preface {.unnumbered}
+
+::: {.callout-note title="In a hurry?"}
+This is a practitioner's field guide to **agentic OCR in 2026** — covering what it is, where it came from, the vendor landscape (open-source and paid), how to evaluate it, how it interacts with RAG, and where it still falls short. The book is structured for two audiences read in parallel: each chapter opens with an executive summary, then dives into the technical body.
+:::
+
+## Who this book is for
+
+Two readers, sharing each chapter:
+
+- **Technical implementers** — ML engineers, IDP architects, applied scientists building document-processing pipelines. You want architecture diagrams, eval rubrics, named tradeoffs, and a working mental model of how agentic loops actually behave.
+- **Technical decision-makers** — CTOs, heads of AI, buyers evaluating vendors. You want the shift-left thesis explained without hand-waving, ROI math you can stress-test, and a vendor-selection framework that doesn't read like a Gartner brochure.
+
+If you can't tell which one you are, read the executive callouts in every chapter; if any of them makes you want more depth, the technical body is right below it.
+
+## How to read this book
+
+The book is roughly linear, but skippable:
+
+- **Read straight through** if agentic OCR is new to you. Parts I and II build the vocabulary used everywhere else.
+- **Skip to Part III** if you already know what agentic OCR is and want the 2026 vendor landscape.
+- **Skip to Part IV** if your team has already chosen a vendor and you need to evaluate output and wire it into RAG.
+- **Read Part V first** if you suspect you're being sold something. The anti-patterns chapter is where most of the field's pain is.
+
+## What this book is not
+
+- Not a tutorial. There's no code-along section that has you implementing your own agent. You don't need one — the field has plenty.
+- Not vendor-neutral. The book has opinions. They are labeled.
+- Not stable forever. Quarter by quarter the leaderboard moves, pricing changes, and new entrants show up. The frameworks should age better than the player names.
+
+## A note on sources
+
+This is a synthesis of original research, public benchmarks, vendor documentation as of mid-2026, and field experience. Citations are inline; the full bibliography is in the appendix.

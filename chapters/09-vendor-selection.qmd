@@ -1,0 +1,86 @@
+# Vendor Selection {#sec-vendor-selection}
+
+::: {.callout-note title="Executive summary" appearance="simple"}
+- *(Phase C)*
+:::
+
+::: {.callout-tip title="Drafter guidance" appearance="minimal"}
+Target ~5,000 words. See `research/00-book-outline.md` Chapter 9. Open with a real worked example — 80k pages/month of insurance underwriting PDFs with three-month deployment timeline. Walk it live.
+:::
+
+## A decision framework
+
+```{mermaid}
+%%| fig-cap: "Vendor-selection decision tree"
+flowchart TD
+    A[Start: define use case] --> B{Volume?}
+    B -- Low (&lt;10k pages/mo) --> C[Hyperscaler API]
+    B -- Medium --> D{Doc variety?}
+    B -- High --> E{Self-host?}
+    D -- Narrow --> F[Classic IDP or template-based]
+    D -- Wide --> G[AI-native specialist]
+    E -- Yes --> H[Open-source agentic stack]
+    E -- No --> G
+```
+
+- The decision is a **stack of four orthogonal questions**: volume, document variability, compliance posture, self-host vs. SaaS.
+- Don't start with vendor reviews. Start with these four answers — they collapse the vendor space by ~80%.
+
+## Use-case → architecture mapping
+
+- **High variability, high stakes** (healthcare prior-auth, legal discovery) → Pattern C (hybrid CV+VLM) with HITL gates.
+- **High variability, lower stakes** (customer onboarding, mixed-vendor invoices) → Pattern B (agentic loop).
+- **Low variability, any stakes** (single-vendor invoices at scale) → Pattern A (single-pass VLM) or classic IDP can still win.
+- **Long-form reasoning** (financial filing analysis, multi-doc packets) → Pattern B + downstream reasoning agent. See DABstep — extraction alone is not enough.
+
+## The wrong question to start with
+
+- "Which vendor has the highest benchmark score?" is the wrong starting question.
+- The right starting question: **"What is my error budget per output, and what does each error cost me downstream?"**
+- Once you have that, vendor selection is just minimizing cost-per-correct-extraction-with-provenance.
+
+## ROI per vertical
+
+### Healthcare prior-auth
+
+- The strongest 2026 ROI case. CMS rule (March 31, 2026) requires public reporting of turnaround/denial/appeal/overturn rates → forcing function for automation.
+- Anterior AI + Reducto achieved 99.24% accuracy on prior-auth. The deployment was profitable at any commercial-tier price point because the alternative (manual review at ~30 min/case) was so expensive.
+- Pattern C with HITL gates is the de-facto architecture.
+
+### Legal (contract review, discovery)
+
+- ROI varies by sub-domain.
+- Contract review: agentic OCR helps with clause extraction, redline detection. Pattern B suffices.
+- Discovery: high volume, low per-document stakes (until you find the smoking gun). Often a classic IDP + targeted re-review with agentic OCR.
+
+### Financial services (KYC, loan packets, filings)
+
+- KYC: Pattern B with strong schema validation. Vendors: Reducto, LlamaParse Agentic.
+- Loan packets (multi-doc, cross-reference): the DABstep-style challenge. Extraction is necessary but not sufficient. Plan for a separate downstream reasoning layer.
+- 10-K / financial filings: LlamaParse Agentic Plus is purpose-built for this.
+
+### Customer onboarding (generic)
+
+- Highest volume, lowest stakes. Cost-per-page matters here.
+- Mistral OCR 3 at $1–$2/1k pages is hard to beat for the parsing layer. NuExtract for downstream structured extraction.
+- Pattern A or Pattern B; rarely Pattern C.
+
+## The buy-vs-build question
+
+- **Buy the parser, build the eval.** This is the single most important principle in vendor selection.
+- Reasons to buy: parsing is mature, vendors have HITL infrastructure you don't want to rebuild, support contracts buy you sleep.
+- Reasons to build: data sovereignty hard-requirement, scale where API spend > engineering cost, audit needs that no vendor can satisfy.
+- Reasons to **always build your own eval**: only you know what "correct" means for your documents. No vendor's golden set matches yours.
+
+## A shortlist methodology
+
+- Pick three vendors across three tiers (one AI-native, one hyperscaler, one classic IDP or open-source).
+- Run all three on your golden set (200–500 hand-labeled documents from production).
+- Score on the metric that matches your downstream cost (Chapter 11 on metric selection).
+- Decide on data, not demos.
+
+## Named takes
+
+> *"Most teams pick a vendor before they pick a metric. This is backwards. Choose the metric that determines your downstream cost, then choose the vendor that minimizes that metric."*
+
+> *"Build-vs-buy is the wrong frame. Buy the parser, build the eval. Reuse vendor parsers; never reuse vendor evals."*

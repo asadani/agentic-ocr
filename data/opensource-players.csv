@@ -1,0 +1,17 @@
+project,maintainer,params,license,outputs,olmocr_bench,strengths,weaknesses,repo
+Chandra,DataLab-to,9B,OpenRAIL,"Markdown, HTML, JSON",83.1,"Top of olmOCR-Bench. 40+ languages. Grounding + image extraction","Newer; OpenRAIL license may need legal review",https://huggingface.co/datalab-to/chandra
+OlmOCR-2,AllenAI,8B,Apache-2.0,"Markdown, HTML, LaTeX",82.3,"Batch-optimized; ~$178/M pages on H100. Strong EN performance","English-only optimization",https://github.com/allenai/olmocr
+dots.ocr,Rednote-hilab,3B,Open,"Markdown, JSON",79.1,"Grounding; image extraction; handwriting","Smaller community",https://huggingface.co/rednote-hilab/dots.ocr
+DeepSeek-OCR,DeepSeek,3B,Open,"Markdown, HTML",75.4,"~100 languages; ~200k+ pages/day on A100; chart/table re-rendering to HTML","Slightly behind frontier on accuracy",https://github.com/deepseek-ai
+MonkeyOCR v1.5,OpenDataLab,N/A,Apache-2.0,"Markdown, HTML",N/A,"SOTA on OmniDocBench v1.5. Beats PP-OCR-VL by 0.15%, MinerU 2.5 by 2.34%. +8.2% over PPOCR-VL on OCRFlux-complex","Specialized; not a general VLM",https://github.com/opendatalab/MonkeyOCR
+Nanonets-OCR2-3B,Nanonets,4B,(unclear),"Markdown + HTML tables",N/A,"Signature extraction; checkboxes; flowcharts; handwriting","License clarity issue",https://huggingface.co/nanonets
+PaddleOCR-VL,PaddlePaddle (Baidu),0.9B,Apache-2.0,"Markdown, JSON, HTML",N/A,"109 languages; prompt-based; matches Gemini-2.5-Pro on OmniDocBench at <100M effective params","Smaller open community in West",https://github.com/PaddlePaddle/PaddleOCR
+PP-StructureV3,PaddlePaddle,<100M,Apache-2.0,"Markdown, JSON, HTML",N/A,"Edit distance 0.145 EN / 0.206 ZH on OmniDocBench. Stunning size/quality ratio","Less agentic by itself",https://github.com/PaddlePaddle/PaddleOCR
+Granite-Docling-258M,IBM,258M,Apache-2.0,DocTags,N/A,"Production-ready VLM. Prompt-based task switching. Element location tokens. Granite-3 backbone + SigLIP2","Newer; smaller community",https://github.com/ibm-granite/granite-docling
+Docling,IBM,N/A (framework),MIT,DocTags + many,N/A,"Pipeline glue layer. Customizable ensembles","Not agentic by itself",https://github.com/DS4SD/docling
+Qwen3-VL,Alibaba,9B,Open,All (general VLM),N/A,"32 languages; ancient text; handwriting; chart understanding","Not OCR-specialized; lower character fidelity",https://huggingface.co/Qwen
+MinerU 2.5,OpenDataLab,1.2B,AGPL-3.0,Markdown,N/A,"Excellent on scientific PDFs","AGPL license excludes some commercial use",https://github.com/opendatalab/MinerU
+LightOnOCR-1B,LightOn AI,1B,Open,Markdown,N/A,"Claims 493k pages/day on H100. Throughput leader","Newer; less validation",https://huggingface.co/lightonai
+NuExtract3,NuMind,2B-8B,Open,JSON (extraction),N/A,"Best-in-class structured extraction. +9 F-score over GPT-4.1 (PRO API)","Extraction-only; not OCR. Use after a parser",https://huggingface.co/numind/NuExtract3
+AgenticOCR,OpenDataLab,N/A,Apache-2.0,Agentic loop,N/A,"Reference implementation for agentic loops","Less mature tooling",https://github.com/opendatalab/agentic-ocr
+Tesseract,Various,N/A,Apache-2.0,Plain text,N/A,"Ubiquitous; cheap; well-known","Not actually agentic without significant additional work",https://github.com/tesseract-ocr/tesseract
