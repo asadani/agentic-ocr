@@ -1,63 +1,143 @@
 # What Agentic OCR Doesn't Solve {#sec-limitations}
 
 ::: {.callout-note title="Executive summary" appearance="simple"}
-- *(Phase C)*
-:::
-
-::: {.callout-tip title="Drafter guidance" appearance="minimal"}
-Target ~3,500 words. See `research/00-book-outline.md` Chapter 14. Honest accounting. The previous chapter made the case for why agentic OCR is real; this chapter is the corresponding "and here's what it still doesn't do."
+- Agentic OCR's capabilities are real, but the marketing claims overstate them. Five categories of problem remain meaningfully unsolved in 2026: **hallucinations**, **domain semantics**, **cost**, **latency**, and the **HITL reality**.
+- Hallucinations have not been eliminated. They are rarer than in 2024, harder to detect, and more expensive when they do happen. The Databricks "$10k → $3k" example is the canonical 2026 hallucination shape, not a 2024 one.
+- "Eliminates manual review" is the marketing line that sells the most pilots and produces the most failed production deployments. Plan for HITL forever. Volume drops by 80%+ in healthy deployments. It does not drop to zero. It will not drop to zero in 2027.
+- "Good enough for production" in 2026 looks like: 95%+ accuracy on a domain-specific golden set, <5s latency per page for batch, <$0.10 cost-per-correct extraction for high-stakes work, 1–10% HITL escalation rate, <1pp accuracy drift per quarter. No deployment hits all of these on day one. Healthy deployments work toward them over twelve to eighteen months.
 :::
 
 ## Hallucinations
 
-- Hallucinations are **reduced but not eliminated**. The "<2% failure rate" (vs. 15–20% for classic OCR) is vendor-reported; production reality varies.
-- The Databricks "$10,000 → $3,000" example is a 2026 hallucination. The agentic loop didn't catch it because the loop didn't know the right answer.
-- "Tiny silent hallucinations" (OpenReview paper) — the hidden failure mode where the model is so confidently wrong that reflection never triggers.
-- The honest framing: hallucinations are now rarer, harder to detect, and more expensive when they happen.
+Hallucinations have not been eliminated. They have been reduced — meaningfully, measurably, and in some workloads dramatically — but the residual rate is non-zero and the residual cases are systematically harder to catch than the failures of earlier generations.
+
+The vendor-reported numbers tell part of the story. Classic OCR pipelines have reported failure rates of 15–20% on enterprise documents (varies wildly by document type, condition, and what "failure" means). Agentic systems report rates under 2% on the same workloads. That is a 10× improvement and it is real. The qualification is that the 2% errors are not a uniform random sample of the 20% — they are a different distribution.
+
+What the residual 2% looks like in 2026:
+
+**Silent hallucinations.** The model produces a wrong answer with high confidence. The reflection loop's self-critique does not flag it. The schema validator does not catch it (because the value is type-correct, just wrong). The system ships the error. The Databricks "$10,000 → $3,000" example [@databricks2026documentintelligence] is the canonical shape. The OpenReview paper on "Tiny Silent Hallucinations in Agentic AI" [@tinysilent2026] documents this category extensively.
+
+**Plausible-but-wrong extractions.** A vendor name is captured correctly, except the system reads "Acme Corp" as "Acme Co." (because the document showed "Acme Corp." with a period and the model dropped the abbreviation). A date is captured as a valid date, just the wrong one. An amount is read as a valid number, just one digit shifted. The values are *plausible* — type-correct, range-valid, format-compliant — and *wrong*. These are the most expensive errors because they pass every automated check and only surface in downstream consequences.
+
+**Hallucinations from absence.** A field is not present in the document, but the schema expects it. The model invents a plausible value. This is the failure mode that schema-rigid systems (anti-pattern 2 in Chapter 13) are particularly prone to. The defense is allowing the model to return "missing" explicitly, with schema validation that recognizes the sentinel.
+
+**Hallucinations from ambiguity.** The document has two candidate values for a field — say, two dates on a contract, one of which is the effective date and one of which is the signature date. The model picks one; sometimes it picks the wrong one. The error is not a hallucination in the strict sense (the value exists in the document) but is functionally indistinguishable from one.
+
+The honest 2026 framing: hallucinations are now rare enough that they will not show up in your pilot evaluation, frequent enough that they will show up in your production at meaningful rates, and consequential enough that the workloads where they matter most need explicit defenses against them. The defenses are: external oracles in the reflection loop, secondary-model cross-checks on high-stakes fields, HITL gates on critical outputs, schema-validity flags that include "value is plausible but unconfirmed" states, and post-hoc audit sampling that catches errors weeks after they shipped.
+
+None of these defenses is free. All of them are cheaper than the cost of a wrong-value-shipped incident in regulated industries.
 
 ## Domain semantics
 
-- Extracting "diagnosis: hypertension" correctly is **parsing**. Interpreting hypertension in the context of this patient's history is **medicine**.
-- Agentic OCR ends at extraction. Domain reasoning belongs downstream, in a different model with different evaluation.
-- Failure mode: trusting the parsing layer for domain judgments it never made. Especially common in healthcare and legal.
+Agentic OCR ends at extraction. It does not begin at understanding.
+
+A clinical record says "DX: hypertension." A well-tuned agentic OCR system extracts `diagnosis: "hypertension"` correctly, ground-truths the source region, returns the structured output. This is parsing.
+
+Whether hypertension is the correct diagnosis given the rest of the record — the patient's age, the lab results, the prior diagnoses, the differential considerations — is medicine. The model that extracted the diagnosis correctly knows nothing about whether the diagnosis itself is right, and would not be qualified to opine if it did.
+
+This delineation matters because the marketing pitches frequently elide it. "Intelligent document understanding," "clinical document intelligence," "legal AI for contracts" all blur the boundary between extraction and domain reasoning. The extraction is solved-ish; the domain reasoning is a separate problem, often handled by different models in different parts of the workflow, evaluated separately, regulated separately.
+
+The failure mode for teams that miss this delineation: building an agentic-OCR system that extracts beautifully, deploying it into a domain workflow, and watching the domain experts (doctors, lawyers, financial analysts, compliance officers) push back against the system's *domain judgments* — which the system never had any business making in the first place. The extraction layer was overburdened with responsibilities it could not carry.
+
+The right architecture: extraction layer (agentic OCR) emits structured, grounded output. Domain layer (a separate model, often a different vendor, often fine-tuned for the domain) operates on that output. The two are evaluated separately. The domain layer's errors are *domain* errors, attributable to the model that handles them; the extraction layer's errors are *extraction* errors. The decoupling is operationally cheaper and architecturally more honest.
+
+In practice: do not buy or build an agentic-OCR system expecting it to do clinical decision support, legal advice, financial analysis, or regulatory interpretation. Those are downstream domain problems that domain models handle. Agentic OCR's job is to deliver good inputs to those models.
 
 ## Cost
 
-- Per-page cost is meaningfully higher. Per-correct-extraction cost is sometimes lower, sometimes not.
-- For low-stakes high-volume workloads (commodity invoices at 10M pages/month), classic IDP can still win. The shift-left thesis does not universally apply.
-- The hidden costs: eval infrastructure, HITL ops, vendor management, observability — all real and rarely budgeted.
+The shift-left thesis (Chapter 6) argues — correctly — that cost-per-correct-extraction is often lower under agentic OCR than under classic IDP plus downstream cleanup. The thesis depends on downstream error costs being non-trivial. For workloads where they are not, the thesis does not apply, and the cost picture inverts.
+
+The categories of cost that remain real even in workloads where the thesis applies:
+
+**Per-page API cost.** $0.001 to $0.056 per page depending on tier (Chapter 7), versus fractions of a cent for classic OCR. The increase is real and shows up directly in monthly billing.
+
+**HITL operational cost.** Even at a healthy 5% escalation rate, HITL operations are usually the largest line item in an agentic-OCR deployment's monthly cost. A reviewer earning $50–$150 per hour at three to five minutes per case at 5% of a 100k-pages-per-month workflow is $12,500 to $62,500 per month — multiples of the parsing API spend.
+
+**Engineering opportunity cost.** Building eval infrastructure, HITL workflows, observability, and integration logic is real engineering. The shift-left thesis says this engineering is more leveraged than the classic-pipeline engineering it replaces, which is true; the engineering is not free.
+
+**Vendor lock-in cost.** Switching vendors is expensive in agentic OCR. Output formats are non-trivially different across vendors. Eval rubrics calibrated to one vendor's behavior may not transfer to another's. Integration code carries vendor-specific assumptions. Realistic switching cost is months of engineering and a non-zero customer-visible disruption window.
+
+**Observability and audit cost.** Drift monitoring, audit-log retention, eval-set refresh, compliance reporting. New categories of cost that did not exist (or existed at much smaller scale) in classic IDP deployments.
+
+For high-error-cost workloads (healthcare, legal, finance, KYC, anything with regulatory exposure), the totals net out in favor of agentic OCR. For low-error-cost workloads (bulk indexing, analytics ingestion, commodity invoice processing at extreme scale), the cost picture often does not net out, and the right answer is one of the simpler architectures in @sec-dont-build's "what to do instead" list.
 
 ## Latency
 
-- Multi-pass reflection adds wall-clock time. A single page that takes 200ms on single-pass VLM may take 2–5s on a full agentic loop.
-- For batch workloads, latency is irrelevant. For real-time use cases (interactive chat on documents), it matters a lot.
-- Architecture choice: use Pattern A (single-pass) for interactive, Pattern B/C (multi-pass) for batch. Don't try to make Pattern C interactive.
+Multi-pass reflection adds wall-clock time. The latency penalty is structural — it cannot be optimized away — and constrains the use cases agentic OCR can serve.
+
+Rough 2026 latency profiles by pattern:
+
+- **Pattern A (single-pass VLM):** 200ms to 2s per page.
+- **Pattern B (agentic loop):** 2s to 5s per page.
+- **Pattern C (hybrid CV+VLM):** 3s to 7s per page.
+
+These are per-page; multi-page documents scale roughly linearly (sometimes super-linearly if the loop revisits earlier pages during reflection).
+
+For batch workloads, latency is invisible. A 100k-page-per-month pipeline running overnight has time for all three patterns regardless of per-page latency.
+
+For interactive workloads, the picture is different. A chat interface over a single PDF, a real-time form-fill assistant, an interactive document-review tool — these need sub-second responses to feel usable. Pattern A is often the only architecture that fits the latency budget, and Pattern A is by Chapter 3's definition not really agentic OCR.
+
+The honest framing: agentic OCR (Pattern B or Pattern C) is designed for batch or near-batch workloads. Interactive workloads can use the parsing output of agentic OCR — chunked, indexed, retrieved — but they cannot wait for an agentic loop to complete on each query. Use cases that mix the two (parse documents in batch, serve queries against the parsed corpus interactively) work well. Use cases that demand per-query agentic parsing (parse this newly-uploaded document and answer my question about it, both in under two seconds) do not.
 
 ## The human-in-the-loop reality
 
-- HITL is **not going away**. Volume drops; the function remains.
-- High-stakes pipelines route to humans for: novel document types, low-confidence outputs, edge-case schemas, audit sampling.
-- The volume reduction is the value: an 80% reduction in HITL volume at constant accuracy is a transformative ROI. But 100% reduction is the failure mode that loses regulators' trust.
-- 2026 maturity: vendors that ship HITL as a first-class subsystem (Hyperscience, Reducto, Landing AI) outperform vendors that treat it as an afterthought.
+The single most consequential overstatement in 2026 agentic-OCR marketing is "eliminates manual review."
+
+The reality: agentic OCR **reduces** HITL volume, often by 80% or more compared to classic pipelines. A workflow that previously ran 30–50% manual review can land at 5–10% escalation rates after a careful Pattern B or C deployment. That reduction is transformative ROI. It is also not zero. It will not be zero in 2027.
+
+The structural reasons HITL remains:
+
+**Some errors require human eyes.** The model cannot tell, by inspection, that a confidently-extracted value is wrong. Some errors are only catchable by a human who has context the model does not have (the patient's other records, the prior version of the contract, the typical pattern for this vendor's invoices).
+
+**Out-of-distribution documents.** Production traffic includes documents that are unlike anything the model has been trained on. The model's behavior on OOD data is unreliable. The right response is to route OOD documents to HITL by default, not to trust the model's extractions on them.
+
+**Edge cases compound.** Any production system handles edge cases that are not in its training data — uncommon document types, novel vendor formats, layout variants the model has not yet seen. Each one alone is rare; collectively they account for a meaningful slice of production traffic, and HITL is the right home for them.
+
+**Compliance requirements.** Regulated workloads often *mandate* human review for certain decisions, regardless of model performance. The HITL gate is not optional; it is a regulatory feature.
+
+The healthy pattern is to engineer HITL as a **first-class subsystem**, not a queue bolted on the side:
+
+- Reviewer-facing UI that shows the document, the candidate extraction, the source region highlighted, and a one-click accept / correct / reject interface.
+- Escalation routing based on document type, confidence, OOD detection, and field-level stakes — not just on aggregate confidence.
+- Feedback loop from reviewer corrections back into the system: the corrections feed the golden set, drive prompt tuning, surface vendor-selection signals, and over time reduce the escalation rate for the document types the system learns to handle.
+- Operational discipline: queue response times, reviewer SLAs, audit trails of correction history.
+
+Vendors that engineer HITL well in 2026: Hyperscience (best-in-class; their HITL infrastructure is one of the genuinely under-appreciated strengths in the classic IDP tier), Landing AI ADE, Reducto. Vendors whose HITL story is weaker: many of the newer AI-native entrants whose model layer outpaced their workflow tooling.
+
+The 2026 production reality: plan for HITL forever. Plan for a 1–10% escalation rate in steady state. Plan for HITL operational cost as a major line item. Plan for the HITL queue to be an organizational function with its own SLAs, staffing, and reporting. Teams that plan otherwise reproduce the dominant 2026 production-failure shape — agentic OCR deployed without HITL infrastructure, accuracy meets vendor benchmarks but downstream consequences accumulate, pilot quietly winds down, budget consumed.
 
 ## What "good enough" actually looks like in production
 
-- Accuracy: 95%+ on a domain-specific golden set is the rough threshold for HITL-supplemented deployment. 99%+ for HITL-light deployment.
-- Latency: <5s/page for batch; <500ms for interactive.
-- Cost: <$0.10/correct-extraction for high-stakes; <$0.01 for high-volume low-stakes.
-- HITL escalation: 1–10% in steady state. 0% means the system isn't escalating things it should.
-- Drift: <1pp accuracy degradation per quarter on the golden set. Anything more, investigate.
+A healthy 2026 agentic-OCR deployment exhibits the following metrics simultaneously:
 
-## Things people expect agentic OCR to fix that it doesn't
+- **Accuracy: 95%+ on a domain-specific golden set** for HITL-supplemented deployment; 99%+ for HITL-light deployment. Aggregate accuracy can be misleading; track per-field accuracy too.
+- **Latency: under 5 seconds per page** for batch workloads; under 500ms for interactive workloads (which often means using Pattern A for the interactive path).
+- **Cost: under $0.10 per correct extraction** for high-stakes workloads; under $0.01 for high-volume low-stakes workloads. The denominator matters — cost-per-page can hide error-rate-multiplied real cost (Chapter 11).
+- **HITL escalation rate: 1% to 10%** in steady state. Healthy values cluster around 3–5%. Outside this range, investigate.
+- **HITL acceptance rate: 30% to 70%.** Reviewers correcting more than 70% means the system is escalating documents it should have caught itself; reviewers accepting more than 70% means the system is escalating documents it actually got right.
+- **Drift: under 1 percentage point of accuracy degradation per quarter** on a refreshed golden set. Anything more, investigate. Vendor model updates are the most common cause.
+- **Grounding accuracy: 90%+** for any compliance-sensitive workload. Without it, audit is impossible.
 
-A short, blunt list:
+No deployment hits all seven on day one. The first six months of a deployment are typically spent building the eval discipline that lets you measure these metrics; the next six to twelve months are spent tuning the system to hit them. Teams that treat these as starting requirements rather than maturity goals set themselves up for premature pilot termination. Teams that treat them as maturity goals — and invest the engineering effort to reach them iteratively — produce the deployments that survive contact with production reality.
 
-- Bad source documents. (Garbage in, garbage out — with more API calls.)
-- Missing semantic context. (The model can't infer what isn't there.)
-- Downstream reasoning quality. (Separate problem.)
-- Vendor lock-in. (Worse, actually — switching costs are higher than classic IDP.)
-- Compliance certification. (Agentic OCR can support compliance work; it does not produce compliance.)
+## Things people expect agentic OCR to fix that it does not
 
-## Named take
+A short list, deliberately blunt:
 
-> *"'Eliminates manual review' is the marketing line that sells the most pilots and produces the most failed production deployments. Plan for HITL. Forever."*
+- **Bad source documents.** Illegible scans, smeared faxes, redacted-then-photocopied artifacts — agentic OCR cannot conjure information that is not in the document. The model can detect that the document is bad; it cannot extract values that are not there.
+- **Missing semantic context.** A document that omits a required field is correctly extracted as "field missing." Whether the field should have been present is a question about the document's intended structure, which the model cannot answer reliably.
+- **Downstream reasoning quality.** The DABstep result. Even perfect extraction does not produce correct downstream answers on multi-step tasks. Reasoning is a separate problem.
+- **Vendor lock-in.** Switching costs are worse, not better, than classic IDP. The marketing line "vendor-neutral output" is almost always less true than it sounds.
+- **Compliance certification.** Agentic OCR can support compliance work — grounded outputs, audit trails — but does not produce compliance. That requires human review, regulatory expertise, and process discipline.
+
+The list is not exhaustive. The pattern across all of them is the same: agentic OCR addresses one specific problem (structured extraction from documents) very well, and is routinely sold as if it addressed adjacent problems too. The adjacent problems are not the same problem. They require different tools, different models, different evaluations, and different organizational commitments.
+
+The clear-eyed reader of this chapter will conclude that agentic OCR is a real, useful, expensive category of technology with specific applicability and specific limits. That conclusion is correct. The marketing materials want you to conclude something larger. Resist the marketing; deploy on the merits.
+
+::: {.callout-tip title="Named takes" appearance="simple"}
+*"Eliminates manual review" is the marketing line that sells the most pilots and produces the most failed production deployments. Plan for HITL. Forever.*
+
+*Hallucinations in 2026 are rarer, harder to detect, and more expensive when they happen. The technology is better; the failure mode shifted, not disappeared.*
+
+*The list of problems agentic OCR does not solve is longer than the list it does. The skill is matching the technology to the problem; the failure mode is the inverse.*
+:::

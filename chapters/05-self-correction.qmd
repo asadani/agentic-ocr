@@ -1,23 +1,35 @@
 # Self-Correction: What It Means and What It Doesn't {#sec-self-correction}
 
 ::: {.callout-note title="Executive summary" appearance="simple"}
-- *(Phase C)*
+- Self-correction is the single most over-loaded phrase in 2026 agentic-OCR marketing. It is doing the work of three distinct subsystems — **detection**, **repair**, and **escalation** — and most vendors who use the term have, at best, one of the three working well.
+- The dominant production failure mode is **detection failure**: the model is wrong, the confidence score is high, the loop never triggers, the error ships. The most discussed result in the 2026 literature ("Tiny Silent Hallucinations in Agentic AI") is essentially a paper-length elaboration of this point.
+- Confidence scores from VLMs are not calibrated probabilities. Treat them as an ordinal signal, cross-validate with external oracles (schema validators, secondary models, tool outputs), and never let an un-cross-checked confidence threshold be the only gate between extraction and output.
+- Self-correction does not fix bad source documents, does not detect missing semantic context, and does not eliminate the need for HITL. It reduces HITL volume, sometimes by an order of magnitude. It does not replace it.
 :::
 
-::: {.callout-tip title="Drafter guidance" appearance="minimal"}
-Target ~4,000 words. See `research/00-book-outline.md` Chapter 5. Open with the OpenReview *"Tiny Silent Hallucinations in Agentic AI"* paper — the field's most under-discussed 2026 result.
-:::
+## The most under-discussed paper of 2026
 
-## What "self-correcting" actually means
+Sometime in early 2026, an unflashy short paper titled *"Tiny Silent Hallucinations in Agentic AI"* circulated on OpenReview [@tinysilent2026]. The paper studied a class of failure mode in agentic systems where the model produced an output that was confidently wrong, and the surrounding loop — the reflection step, the confidence check, the schema validator — failed to flag it. The errors were small (a transposed digit, a misread date, a single field misclassified) but they were silent, in the precise sense that the system gave no indication anything had gone wrong. They shipped.
 
-- Self-correction decomposes into three concrete subsystems, not one capability:
-  - **Detection** — knowing you're wrong.
-  - **Repair** — fixing it.
-  - **Escalation** — failing safely to HITL when detection or repair can't close the loop.
-- Most production failures are **detection failures**, not repair failures. The model never noticed.
-- The standard marketing pitch — "the model corrects its own mistakes" — collapses all three into one. The vendors that take production seriously instrument all three separately.
+The paper got modest attention at publication and considerably more by mid-2026 as production teams started seeing the pattern in their own deployments. The finding is unsettling because it punctures the most reassuring story that agentic OCR vendors tell about their systems: that the loop catches errors the model misses. It often does. It also, with a surprising frequency, does not.
+
+This chapter is about why. Self-correction is a real capability that real systems implement, and the field has made measurable progress on it. But the marketing has run far ahead of the engineering, and the production deployments that survive contact with reality are the ones whose teams understand what self-correction does and — equally important — what it does not do.
+
+## Three subsystems, not one capability
+
+When a vendor says "the system self-corrects," they could be describing any of three operationally distinct things. They are usually describing one of the three and implying the other two. The first move in evaluating a self-correction story is to insist on the disambiguation.
+
+**Detection** — knowing that an extraction is wrong. This requires either (a) an external oracle that can verify the extraction independently or (b) a confidence signal that is genuinely calibrated against accuracy on the system's actual production distribution. Detection is by far the hardest of the three subsystems to do well. It is also the one most production failures are downstream of.
+
+**Repair** — fixing a detected error. This is typically a re-extraction with revised instructions ("the date you produced is invalid; re-examine the date field"), but it can also be a routing decision (send this region to a specialized tool the system did not initially use) or a contextual lookup (resolve the entity against an external KB before deciding the extraction is wrong). Repair is the easiest of the three. Most vendors do it reasonably well, because the LLM behind it is good at responding to specific revision prompts.
+
+**Escalation** — failing safely when detection or repair cannot close the loop. Escalation routes the document to a human reviewer, attaches the relevant context (the failing field, the candidate extraction, the source region highlighted), and pre-populates the reviewer's interface for an efficient decision. Escalation is, in some ways, the most engineering-intensive of the three because it requires a HITL queue, a reviewer-facing UI, a feedback loop back into the system, and operational discipline around the queue's response time.
+
+A system that does all three well is a real agentic OCR system. A system that does two of three has predictable, named failure modes (Chapter 13 returns to these as anti-patterns). A system that does only one — typically repair — is what most vendor demos are showing you, and it is much less useful than it looks.
 
 ## The reflection loop, mechanically
+
+The canonical reflection loop, simplified to its essential structure, looks like this:
 
 ```{mermaid}
 %%| fig-cap: "Reflection loop with confidence gating"
@@ -31,42 +43,92 @@ flowchart TD
     E -- No --> G[Escalate to HITL]
 ```
 
-- The retry budget is a real engineering parameter, not magic. Typical values: 2–4 retries before escalation.
-- The confidence threshold is calibrated, not chosen. Calibration data needs to match production distribution.
-- A reflection loop **with no external oracle** is a model becoming more confident in its first answer.
+A few things about this diagram are worth holding onto, because the failure modes hide in the details.
 
-## Confidence gating: real vs. theatre
+**The self-critique step.** What the model is critiquing here is its own output. That is the source of most detection failures: a model that produced a wrong answer with high confidence is often *also* the model that critiques that answer favorably. The loop has no external oracle in the simple version. Adding one — a schema validator, a secondary model with a different prompt, a tool output — is what turns a fragile loop into a robust one. Production-grade implementations almost always wire in at least one external oracle. Demo-grade implementations often do not.
 
-- Confidence scores from VLMs are not calibrated probabilities. They are an ordinal signal at best.
-- The classic failure mode: high-confidence wrong answers. Model is wrong, model is confident, threshold-based gating passes the answer through.
-- What real confidence gating needs: an **external oracle** — schema validator, layout cross-check, KB lookup, or a different model's opinion.
-- The Databricks "$10,000 → $3,000" hallucination is a textbook high-confidence-wrong failure. The loop didn't catch it because the loop didn't know the right answer.
+**The confidence threshold.** This is a number. Typically somewhere in the 0.6 to 0.9 range for the model-emitted confidence scores. The right value is the value that, on your golden set, maximizes a defensible utility function — usually some combination of accuracy and HITL escalation rate. Choosing it by intuition is the sort of thing that looks fine in development and quietly destroys production. The threshold needs to be calibrated, and calibration on out-of-distribution documents (i.e., the documents your system will see in production that are unlike anything it saw in development) is the live research problem.
+
+**The retry budget.** Usually two to four. The lower bound matters because a single retry is often not enough to converge on the right answer; the upper bound matters because retries cost real money and a recalcitrant document can burn through retries without ever improving. Some sophisticated systems vary the retry budget by document complexity or by extraction confidence — burning more retries on the documents where the marginal probability of getting it right is high, and giving up faster on documents the model clearly cannot handle.
+
+**The escalation path.** When the loop gives up, what happens? In production, escalation usually means "added to a HITL queue with the failing field highlighted." In demos, escalation often means "returns an error to the API caller" — which is operationally useless because there is nobody on the other end of the API to do something about it.
+
+## Confidence gating: real versus theatre
+
+Confidence scores deserve their own section because so much of the field's self-correction story rides on them, and so much of that story is wrong.
+
+A confidence score, in agentic OCR, is a number between zero and one that the model emits alongside an extraction. The intuitive story is that it represents the probability that the extraction is correct. The actual reality is more complicated.
+
+For a *well-calibrated* model on its *training distribution*, the confidence score does approximately what the intuitive story claims. A confidence of 0.95 on an extraction means that, across many similar extractions, roughly 95% of them are correct. This is a useful signal. The threshold is meaningful. The reflection loop works.
+
+For an *uncalibrated* model on an *out-of-distribution* document — which is what most production deployments see most of the time — the confidence score is at best an ordinal signal. The model is more confident on extraction A than on extraction B, but neither number means what the intuitive story claims. A confidence of 0.95 on an OOD document can be accompanied by an accuracy as low as 60%, and a confidence of 0.6 on an in-distribution document can be accompanied by an accuracy of 90%. The number is informative; the number is not a probability.
+
+This matters for self-correction because the standard reflection loop gates on confidence as if it were a probability. If your gating logic is `if confidence < 0.85 then retry`, you are assuming the model knows when it does not know. On in-distribution data with calibrated models, this assumption is approximately true. On out-of-distribution data with realistic models, this assumption is wrong, and the gate fails closed (high-confidence wrong answers ship) much more often than fail open.
+
+The Databricks "$10,000 → $3,000" hallucination is a textbook example [@databricks2026documentintelligence]. The model misread the value. The model was confident in its misreading. The reflection loop, gating on confidence, approved the wrong answer. The error shipped. No external oracle was in the loop to verify against the actual digit on the page.
+
+The fix is not "improve the confidence scores." The fix is to stop treating confidence as the only gate. Real production self-correction wires in **external oracles**:
+
+- **Schema validators.** Does the output parse? Are dates in valid ranges? Are required fields present? Are enums populated with allowed values? Schema validation is cheap, deterministic, and catches a surprising fraction of high-confidence wrong answers — particularly the kind that hallucinate plausible-looking values.
+- **Secondary models.** A second VLM with a different prompt produces a candidate extraction. If the two extractions disagree, escalate or re-prompt with the disagreement as context. This is expensive (two model calls instead of one) but catches errors that single-model self-critique structurally cannot.
+- **Tool cross-checks.** A layout detector says the date field lives in this bounding box. The VLM extracted the date from a different region. Disagreement → flag.
+- **External KB lookups.** The extracted ICD code is not in the ICD-10 codebook. The extracted vendor name does not match any vendor in the system's vendor list. These are deterministic checks that any agentic system handling structured domains should run by default.
+
+Each external oracle has costs (compute, latency, integration effort), and a production system rarely uses all of them on every document. The healthy pattern is to use them adaptively: schema validation always (it is nearly free), KB lookups when the extracted entity falls in a domain the system knows about, secondary models when the primary extraction is below some confidence threshold or when the document is flagged as high-stakes.
 
 ## A failure taxonomy
 
-A 3×N matrix of failure modes, grouped by which subsystem broke.
+The most useful tool for evaluating a self-correction implementation — your own or a vendor's — is a taxonomy that names the specific failure modes so you can ask whether the system handles each one.
 
-- **Detection failures:**
-  - Silent hallucination — model is wrong, model doesn't notice.
-  - Confidence-score miscalibration — model is unsure but reports high confidence.
-  - Out-of-distribution blindness — document is unlike training data, model doesn't realize it.
-- **Repair failures:**
-  - Repair-thrash — every retry produces a different wrong answer.
-  - Reflection drift — the critique itself drifts further from truth across iterations.
-- **Escalation failures:**
-  - No HITL path — the model escalates to a queue that nobody monitors.
-  - Wrong-stakes escalation — the system escalates everything (HITL overload) or nothing (silent acceptance).
+**Detection failures** are failures of subsystem one — the system did not notice the error.
 
-(See research notes section 10 for production-incident retrospective sources.)
+- *Silent hallucination.* The model produces a wrong answer with high confidence. The loop sees high confidence, accepts the output, ships the error. The most common production failure mode. Mitigations: external oracles, secondary-model cross-checking, calibrated confidence thresholds tuned on a representative golden set.
+- *Confidence miscalibration.* The model produces a borderline answer but reports either much higher or much lower confidence than the accuracy data would justify. Mitigations: empirical calibration on a golden set, treating confidence as ordinal rather than absolute.
+- *Out-of-distribution blindness.* The document is sufficiently different from anything in the model's training distribution that the model has no real basis for opinion, but emits one anyway. Mitigations: OOD detection as a pre-extraction step; route OOD documents directly to HITL.
+
+**Repair failures** are failures of subsystem two — the system noticed the error but could not fix it.
+
+- *Repair thrash.* Every retry produces a different wrong answer. The model is not converging. Mitigations: cap retry budget, vary prompt strategy across retries (different specialized tools, different VLM, different prompt template), recognize thrash patterns and escalate early.
+- *Reflection drift.* The model's own critique drifts further from truth across iterations. Most often happens when the critique step is run by the same model that produced the original extraction, with no external grounding. Mitigations: external oracle in the critique step; rotate critic model.
+- *Schema rigidity overcorrection.* The system tries to coerce an extraction into a schema that does not fit the document and produces a series of progressively worse answers. Mitigations: schema flexibility (accept fields the schema does not anticipate), and recognize when the document is structurally incompatible with the target schema.
+
+**Escalation failures** are failures of subsystem three — the system escalated, but escalation did not solve the problem.
+
+- *No HITL path.* The system raises an error or returns a "could not extract" signal, but there is no human reviewer queue downstream. The error becomes a customer complaint. Mitigations: build the queue; do not deploy without it.
+- *HITL overload.* The system escalates too aggressively (often because confidence thresholds are too strict or because production traffic is OOD relative to development) and floods the reviewer queue. Mitigations: monitor escalation rate as a production metric; tune thresholds; investigate whether OOD documents have a different routing path than in-distribution documents.
+- *HITL underload (silent acceptance).* The opposite failure: the system escalates almost nothing because confidence is structurally high on OOD data. Mitigations: track HITL acceptance rate (the rate at which reviewers correct vs. accept escalated extractions); a healthy system has escalation rate of 1–10% and HITL acceptance rate (i.e. reviewer agrees the system got it right) somewhere between 30% and 70%. Extremes in either direction suggest a broken loop.
+
+The taxonomy is not exhaustive — the OpenReview paper and several follow-ups have catalogued additional failure modes in narrower contexts — but it covers the cases that most production teams will encounter. Run it as a checklist against a vendor's self-correction story. The vendors that can answer all nine specific mitigations have done the engineering. The vendors that hand-wave through the categories have not.
 
 ## What self-correction does not do
 
-- Does not fix **bad source documents**. Garbage in is still garbage out, just with more API calls.
-- Does not detect **missing semantic context**. An invoice that's missing a field is correctly extracted as "this field is missing." Whether the field *should* exist is a different judgment.
-- Does not provide a **safety net** for high-stakes decisions. HITL still belongs there. The reflection loop reduces HITL volume, it does not replace HITL.
+The capability is real; the marketing claims around it are often larger than the capability. A few honest delineations:
 
-## Named takes
+**Self-correction does not fix bad source documents.** If the original page is illegible, smeared, partially redacted, or upside-down at a 30-degree angle the deskewer cannot handle, no amount of reflection will recover the underlying information. The model can detect that something is wrong (sometimes) but cannot conjure correct values from a document that does not contain them. Garbage in, garbage out — with more API calls.
 
-> *"Self-correction is not 'the model will figure it out.' It is three concrete subsystems — detection, repair, escalation. If your vendor talks about it as one thing, they have one of the three working."*
+**Self-correction does not detect missing semantic context.** An invoice with a missing required field is correctly extracted as "this field is missing." Whether the field *should* have been present is a question about the document's intended structure, which the model has no way to answer reliably. Production systems handle this with schema validation that flags missing required fields, plus HITL routing for the flagged cases. The model is not the right tool.
 
-> *"A reflection loop with no out-of-loop ground truth is a model becoming more confident in its first answer. Call it what it is."*
+**Self-correction does not provide compliance certification.** It can support compliance work — grounded outputs, audit logs, escalation trails — but it does not produce compliance. A regulated workflow still needs a compliance review by humans who understand the regulatory regime. Vendors who sell self-correction as if it removes the need for compliance review are selling something they cannot deliver.
+
+**Self-correction does not eliminate HITL.** It reduces the volume of HITL, often dramatically. Production deployments that pre-agentic ran 30–50% manual review can land at 5–10% escalation rates after a careful Pattern B or C deployment. That is transformative ROI. It is not zero. Plan for HITL forever. The vendors who promise HITL elimination produce the deployments that fail most spectacularly when they meet real production traffic.
+
+## What good self-correction looks like in production
+
+A healthy 2026 agentic OCR deployment exhibits these properties simultaneously:
+
+- **Escalation rate between 1% and 10%** of documents in steady state.
+- **HITL reviewer agreement rate around 30–70%** — the reviewers correct the system often enough that escalation is doing useful work, but agree often enough that the system is not just dumping documents onto humans.
+- **Confidence calibration within 5–10 percentage points** of accuracy across the production distribution, verified quarterly on a refreshed golden set.
+- **Retry budgets observed (and respected) per document type**, with thrash detection that gives up faster on documents the model cannot handle.
+- **External oracles wired in** — at minimum schema validation; preferably also entity lookups and (for high-stakes) secondary-model cross-checking.
+- **Drift monitoring** that catches the inevitable production distribution drift before it becomes a customer-visible incident.
+
+No deployment achieves all six on day one. Most achieve them iteratively over the first six to twelve months in production. Teams that treat self-correction as something the vendor sold them, rather than as a discipline they own, do not achieve them ever.
+
+::: {.callout-tip title="Named takes" appearance="simple"}
+*Self-correction is not "the model will figure it out." It is three concrete subsystems — detection, repair, escalation. If your vendor talks about it as one thing, they have one of the three working.*
+
+*A reflection loop with no out-of-loop ground truth is a model becoming more confident in its first answer. Call it what it is.*
+
+*Confidence scores from agentic OCR systems are an opinion the model has about its own work. Treat them as you would any other unverified opinion.*
+:::

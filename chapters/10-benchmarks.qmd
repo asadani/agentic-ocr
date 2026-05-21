@@ -1,100 +1,184 @@
 # Benchmarks {#sec-benchmarks}
 
 ::: {.callout-note title="Executive summary" appearance="simple"}
-- *(Phase C)*
-:::
-
-::: {.callout-tip title="Drafter guidance" appearance="minimal"}
-Target ~4,500 words. See `research/00-book-outline.md` Chapter 10. Open with the OmniDocBench saturation result — the most useful entry point to "why benchmarks lie now."
+- **OmniDocBench has saturated.** Top scores cluster within a percentage point. LlamaIndex's own blog declared as much in mid-2026. If you are still picking vendors by OmniDocBench rank in late 2026, you are not paying attention.
+- Use the public benchmarks as **filters** (eliminate the obviously worst), not as **rankings** (pick the best). The benchmark that actually predicts your production behavior is your golden set, evaluated on metrics that match your downstream cost (Chapter 11).
+- **DABstep is the benchmark to watch.** The top reasoning model scores about 14.55% on its hard tasks. The number is low enough to function as a permanent reality check on anyone selling magic, and it punctures the most common 2026 fallacy: that better parsing solves the long-form-reasoning problem.
+- Vendor-published benchmarks (ParseBench, RD-TableBench, OfficeQA) are useful but biased toward the vendor's strengths. Cross-validate; never let a single vendor's leaderboard decide procurement.
 :::
 
 ## Why benchmarks matter — and where they mislead
 
-- **OmniDocBench has been declared saturated** by LlamaIndex's own blog (mid-2026). Top scores cluster within ~1pp.
-- Saturation is real and predictable. Use benchmarks as **filters** (eliminate the worst), not **rankings** (pick the best).
-- Vendor-published benchmarks (ParseBench, RD-TableBench) are useful but biased. Cross-validate.
-- Your golden set is the only benchmark whose score actually predicts your production behavior (Chapter 11).
+Benchmarks are the field's shared coordinate system. Without them, every claim about agentic OCR is a vendor anecdote. With them, the conversation has a substrate of public, reproducible numbers that buyers, builders, and researchers can argue over. That much is real progress, and the 2026 benchmark landscape is dramatically more useful than the 2024 landscape was.
+
+What benchmarks do not do — and what most procurement processes implicitly assume they do — is predict production behavior. A benchmark is a measurement of how a system performs on a specific distribution of documents under a specific evaluation rubric. Your production distribution is not the benchmark distribution. Your evaluation rubric is not the benchmark rubric. The benchmark score is a signal about the system's general competence; it is not a forecast of how the system will handle your documents.
+
+Three failure modes are worth naming up front.
+
+**Benchmark saturation.** When top scores cluster within a few percentage points, the benchmark stops discriminating between vendors. This has happened to OmniDocBench in 2026. It happens to every benchmark eventually. The right response is to treat saturated benchmarks as filters (eliminate the bottom of the field) rather than rankings (pick the top), and to seek out newer, harder benchmarks for discrimination among leaders.
+
+**Vendor publication bias.** Benchmarks published by vendors are useful but selectively shaped. ParseBench is run by LlamaIndex; RD-TableBench by Reducto; OfficeQA by Databricks; SCORE-Bench by Unstructured.io. None of these are dishonest, and all of them are valuable signals. But each one is calibrated to the strengths of its publisher, and each one's top vendor on its own leaderboard is, more often than not, the publisher. Take vendor-published rankings as one signal among many, not as the deciding answer.
+
+**Distribution mismatch.** The most common production failure mode is a team that picks the highest-scoring vendor on a public benchmark and then watches their accuracy fall by five to ten percentage points on Day 1 in production. The vendor's score was real; the production gap is real; the difference is that the benchmark and the production distribution were not the same. Chapter 11 deals with this in depth; the relevant point here is that no benchmark, however well-designed, predicts production behavior on a distribution it does not match.
 
 ## The 2026 benchmark catalog
 
-### ParseBench (LlamaIndex)
+The benchmarks worth knowing about in 2026, ranked by current usefulness for vendor selection:
 
-- ~2,000 human-verified pages, 167k+ test rules.
-- Axes: tables, charts, content fidelity, formatting, **visual grounding**.
-- Top: **LlamaParse Agentic at 84.9%**, ~$0.012/page.
-- Live leaderboard at parsebench.ai.
-- Caveat: published by LlamaIndex. Rule selection inevitably shapes results.
+### ParseBench (LlamaIndex + Kaggle)
+
+Approximately 2,000 human-verified pages and 167,000 test rules across five evaluation axes: tables, charts, content fidelity, formatting, and visual grounding [@parsebench2026]. Targets high-stakes enterprise use cases — insurance claims, financial filings, healthcare records — where small parsing errors materially affect downstream decisions.
+
+The live leaderboard at parsebench.ai is the most-cited 2026 reference for end-to-end agentic-OCR vendor comparison. As of mid-2026, the top result is **LlamaParse Agentic at 84.9% overall**, at approximately $0.012 per page. The leaderboard includes 14 methods spanning vision-language models, specialized document parsers, and the various LlamaParse tiers.
+
+Use it for: getting a broad sense of where vendors sit in the commercial-agentic landscape, comparing pricing-vs-accuracy tradeoffs across tiers, and tracking the field's overall accuracy frontier.
+
+Caveat: published by LlamaIndex. The rule selection inevitably shapes which behaviors the benchmark rewards. LlamaParse's lead on its own benchmark is a useful data point, not a definitive ranking. Cross-check on OmniDocBench, olmOCR-Bench, or your own golden set before letting ParseBench drive a procurement decision.
 
 ### OCRBench v2
 
-- 10,000+ QA pairs, bilingual (EN + ZH).
-- Less useful when production contract is structured extraction (vs. visual text reasoning).
-- Worth tracking if your workload has heavy Chinese-language content.
+Approximately 10,000+ QA pairs, bilingual English plus Chinese. Tests text recognition, layout understanding, and visual question-answering. Useful when your workload has heavy Chinese-language content; less useful when your production contract is structured extraction rather than visual text reasoning.
+
+OCRBench v2 is the benchmark to track if you are choosing between models for a bilingual or Chinese-heavy deployment. For English-only or English-dominant workloads, olmOCR-Bench is a sharper signal.
 
 ### olmOCR-Bench (AllenAI)
 
-- 7,000+ test cases across 1,400 documents. Unit-test style.
-- English-only. Annotations from closed-source VLMs.
-- Top open-source: **Chandra at 83.1, OlmOCR-2 at 82.3, dots.ocr at 79.1**.
-- Useful precisely because it's English-only and reproducible — great for regression-testing English-heavy pipelines.
+The most rigorously engineered benchmark in the open-source ecosystem. Approximately 7,000+ test cases across 1,400 documents, with a unit-test-style evaluation approach: each test verifies a specific property (table cell relationships, reading order, field-level extraction correctness) rather than producing a single aggregate score [@olmocrbench2025].
+
+English-only. Annotations generated by closed-source VLMs (a known but transparent limitation; the AllenAI team has been candid about it). The current top scores as of mid-2026:
+
+- **Chandra (9B, OpenRAIL):** 83.1 ± 0.9
+- **OlmOCR-2 (8B, Apache-2.0):** 82.3 ± 1.1
+- **dots.ocr (3B):** 79.1 ± 1.0
+- **DeepSeek-OCR (3B):** 75.4 ± 1.0
+
+Use it for: open-source model comparison, regression testing as you iterate on prompts or fine-tune models, and as a reproducible benchmark you can re-run on your own infrastructure. The unit-test structure makes it the easiest of the major benchmarks to incorporate into a CI pipeline.
+
+Caveat: English-only. Annotations from closed-source VLMs introduce a slight bias toward those VLMs' interpretations.
 
 ### OmniDocBench v1.7
 
-- 1,651 pages + a new 296-page hard subset (April 2026).
-- 10 document types, 5 layout types, 5 languages.
-- Skills-based evaluation added in v1.7.
-- **Considered saturated** — top scores cluster within ~1pp.
-- Hard subset is where the discriminating signal now lives.
+1,651 pages plus a new 296-page hard subset added in April 2026. Covers 10 document types, 5 layout types, and 5 languages. Evaluates layout, formulas, tables, HTML/LaTeX rendering, and reading order [@omnidocbench].
+
+**OmniDocBench has saturated.** This is the most important fact about it. The top of the leaderboard clusters within a percentage point or two; the discriminating signal that the benchmark provided in 2024–2025 has compressed. LlamaIndex published an explicit post titled "OmniDocBench is saturated, what's next for OCR benchmarks?" in mid-2026, which is a useful read for understanding the field's view of where benchmark evolution needs to go next.
+
+The 296-page hard subset added in April 2026 partially addresses saturation by introducing more difficult formulas, tables, and layouts. Top scores on the hard subset still discriminate meaningfully. If you are using OmniDocBench in 2026, use the hard subset rather than the full leaderboard.
+
+PP-StructureV3's result on OmniDocBench — edit distance 0.145 on English documents and 0.206 on Chinese documents, at under 100M parameters — remains the cleanest data point in the benchmark's history. The story is not "PP-StructureV3 is the best model on OmniDocBench"; the story is "a sub-100M-parameter specialized model matches Gemini-2.5-Pro's accuracy, which means scale is not the variable that matters here."
+
+Use it for: cross-validation against vendor-published benchmarks, multilingual evaluation (limited but present), and the historical record of how the field has progressed.
+
+Caveat: saturated at the top; use the hard subset for discrimination.
 
 ### RD-TableBench (Reducto)
 
-- 1,000 adversarial tables. PhD-annotated.
-- Needleman-Wunsch alignment for table-cell matching.
-- Top: **Reducto at ~0.90 similarity**, ~20pp ahead of hyperscalers.
-- Vendor-published. Treat as one signal.
+1,000 adversarial tables, PhD-annotated, evaluated using Needleman-Wunsch alignment for table-cell matching [@rdtablebench]. The most demanding public benchmark specifically for table extraction.
+
+Top result: **Reducto at approximately 0.90 cell-alignment similarity**, approximately 20 percentage points ahead of the hyperscaler APIs. The gap is real and reproducible.
+
+Use it for: evaluating any system whose workload involves complex tables (financial filings, scientific papers, regulatory documents, invoices with nested line items). RD-TableBench's adversarial nature — the tables are explicitly chosen to be hard — makes it a sharper signal of real-world table handling than general benchmarks.
+
+Caveat: published by Reducto, with Reducto at the top of the leaderboard. The pattern repeats across vendor-published benchmarks; treat the leadership as one signal, cross-validate before deciding.
 
 ### DABstep (Adyen + Hugging Face)
 
-- 450+ real-world data-analysis tasks from Adyen's operational workloads.
-- Mixes structured (CSV/JSON) and unstructured (text, manuals) data.
-- **Top score: ~14.55% on hard tasks (o4-mini reasoning).**
-- The most important 2026 benchmark — for what it reveals about the gap between "extracts correctly" and "answers correctly downstream."
-- This is the benchmark that embarrasses the field. Read it whenever you want a reality check.
+The most important 2026 benchmark, and the one most likely to be ignored by procurement processes that should be paying attention.
+
+450+ real-world data-analysis tasks pulled from Adyen's operational workloads [@dabstep2025]. Mixes structured (CSV, JSON) and unstructured (text, manuals, internal documentation) data. Requires agents to demonstrate multi-step reasoning — extraction is necessary but not sufficient.
+
+**Top score: approximately 14.55% on hard tasks. The best-performing model (o4-mini with reasoning prompting) scores 14.55%; the overall best-in-class on the full benchmark is around 16%.**
+
+That ceiling is low enough to be the field's most useful reality check. The story DABstep tells: **frontier reasoning models, given parsed data and tools, fail roughly 85% of multi-step analysis tasks**. The framing that the field has unlocked complex document understanding is contradicted by this number more thoroughly than by any other 2026 result.
+
+DABstep is the benchmark to cite when arguing that:
+- Extraction and reasoning are separate problems, and solving one does not solve the other.
+- "Better OCR will fix our agent" is sometimes a $500k mistake (Chapter 12 returns to this).
+- The field has more headroom for improvement than the saturated parsing benchmarks suggest.
+
+Use it for: forecasting where agentic-OCR-plus-reasoning systems will struggle, evaluating any system that claims to handle multi-document or multi-step workloads, and as a permanent humility check.
+
+Caveat: small N (450 tasks); narrow distribution (Adyen's operational workloads). The ceiling is real; the specific number may move as models improve.
 
 ### SCORE-Bench (Unstructured.io) — new in 2026
 
-- 1,000+ page enterprise dataset: scanned invoices, nested tables, handwriting, schematics, patents, marketing collateral.
-- SCORE = Structural and Content Robust Evaluation. Designed for **generative** parsing systems — separates representation diversity from actual extraction errors.
-- Worth watching as it matures. Already compares Reducto, LlamaParse, Docling, Snowflake, Databricks, NVIDIA.
+1,000+ page enterprise dataset spanning scanned invoices, nested tables, handwritten notes, schematics, patents, marketing collateral [@scorebench2026]. Built specifically for generative parsing systems with an evaluation framework that separates legitimate representational diversity (two valid ways to represent the same content) from actual extraction errors.
+
+SCORE = Structural and Content Robust Evaluation. The interpretation-agnostic design is the most novel aspect: traditional benchmarks penalize models that emit a structurally valid output that differs from the reference (a Markdown table vs. an HTML table containing the same content, for instance). SCORE accepts equivalent representations and only penalizes actual extraction errors.
+
+The benchmark is new and worth watching. As of mid-2026 it has been used to compare Reducto, LlamaParse, Docling, Snowflake, Databricks, and NVIDIA — a useful set of cross-vendor comparisons that did not exist before. The methodological contribution may end up being more important than the leaderboard.
+
+Use it for: cross-vendor parsing comparisons, especially for downstream use cases where the parsed output feeds a generative model (RAG, agentic workflows) and representational flexibility is acceptable.
+
+Caveat: published by Unstructured.io; new enough that the field has not converged on how seriously to take it. Worth tracking.
 
 ### OfficeQA (Databricks) — new in 2026
 
-- Enterprise document-workflow reasoning tasks.
-- Frontier agents score **below 50%**.
-- Insertion of upstream `ai_parse_document` produces **16% average gain** — the cleanest evidence for the shift-left thesis.
-- arXiv 2603.08655 for full details.
+Enterprise document-workflow reasoning tasks. The benchmark on which Databricks reported their **16% across-the-board agent-performance gain** when `ai_parse_document` was inserted upstream of the reasoning step (Chapter 6).
+
+The headline number on OfficeQA itself: **frontier agents score below 50% accuracy** on document-reasoning tasks without good upstream parsing. Add good parsing and the average improves by 16 percentage points across every agent framework tested.
+
+The benchmark's methodology and dataset are described in arXiv 2603.08655. The numbers are vendor-published (Databricks), with the appropriate caveats, but the directional finding — that reading is the ceiling on agent quality — is robust across the wider 2026 literature.
+
+Use it for: framing the shift-left thesis in vendor pitches and internal architecture discussions, citing the 16% number as the cleanest piece of evidence for upstream parsing as an agent-quality lever.
+
+Caveat: new benchmark, Databricks-maintained, used primarily to demonstrate the value of Databricks Document Intelligence. The thesis the benchmark supports is broader than the vendor's product.
 
 ## What each benchmark actually measures
 
-*(Render from `data/benchmarks.csv` in Phase C. Add a column for "what it misses" — the underspecified axis for each benchmark.)*
+The data in `data/benchmarks.csv` consolidates the per-benchmark details. The compressed cross-comparison:
+
+| Benchmark | Year | Scope | Top score | Top vendor / model | Best use |
+|---|---|---|---|---|---|
+| ParseBench | 2026 | End-to-end agentic parsing | 84.9% | LlamaParse Agentic | Commercial vendor comparison |
+| OCRBench v2 | 2025 | Text + layout + QA (EN+ZH) | — | Varies | Bilingual workloads |
+| olmOCR-Bench | 2025 | Open-source unit tests (EN) | 83.1 | Chandra (9B) | Open-source regression |
+| OmniDocBench v1.7 | 2026 | Diverse docs, multilingual | Saturated | Cluster within 1pp | Cross-validation; use hard subset |
+| RD-TableBench | 2025 | Adversarial tables | ~0.90 | Reducto | Table extraction |
+| DABstep | 2025 | Multi-step reasoning | ~14.55% | o4-mini | Reasoning ceiling check |
+| SCORE-Bench | 2026 | Generative-parser eval | — | Varies | Cross-vendor representational fairness |
+| OfficeQA | 2026 | Doc-reasoning workflows | <50% (without parsing) | — | Shift-left thesis evidence |
+
+The compressed reading: ParseBench and olmOCR-Bench for vendor and model selection respectively; RD-TableBench for table-heavy workloads; OmniDocBench's hard subset for cross-validation; DABstep for humility; SCORE-Bench and OfficeQA for new-methodology signals worth tracking.
 
 ## What benchmarks miss
 
-- **Latency** — most benchmarks score accuracy and ignore wall-clock time. Production cares.
-- **Cost-per-correct-output** — benchmarks report accuracy *or* cost separately, rarely jointly.
-- **Long-form reasoning** — DABstep is the only one that really tests this, and the ceiling is shockingly low.
-- **HITL acceptance rate** — no public benchmark measures the metric that matters most in production.
-- **Domain shift** — every benchmark has a distribution. Your distribution is different.
+Benchmarks are useful precisely because they constrain what they measure. The constraint is also their limitation. Five things are systematically under-measured in the 2026 public benchmark landscape:
+
+**Latency.** Most benchmarks score accuracy and ignore wall-clock time. Production deployments care a great deal about latency, especially for interactive use cases. A vendor with 2% higher accuracy and 10× higher latency is not better than the alternative for many real workloads. Track latency in your own evaluation; do not let benchmark scores conceal it.
+
+**Cost-per-correct-output.** Benchmarks report accuracy *or* cost separately, rarely jointly. The number that predicts your monthly bill is cost-per-correct-extraction-with-provenance, not accuracy. The combination is workload-specific and is not in any public benchmark.
+
+**Long-form reasoning.** DABstep is the only public benchmark that meaningfully tests this, and its ceiling is ~14.55%. Most agentic-OCR systems sold for "intelligent document understanding" have never been benchmarked on long-form reasoning at all. The gap between extraction accuracy and downstream-task accuracy is real and large; benchmarks that elide it produce false confidence.
+
+**HITL acceptance rate.** No public benchmark measures the metric that matters most in production — the rate at which human reviewers accept the system's extractions versus the rate at which they correct them. This is a production-only metric, and the absence from public benchmarks is one of the deeper structural gaps in the 2026 evaluation landscape.
+
+**Domain shift.** Every benchmark has a distribution. Your production distribution is different. The gap between benchmark performance and your production performance is workload-specific, and no benchmark, however well-designed, predicts it. The only honest answer is to evaluate on your own data.
 
 ## When to ignore the leaderboard
 
-- When the top 5 cluster within 1–2pp on a metric your team doesn't directly care about.
-- When the benchmark is published by the vendor whose model leads it.
-- When the benchmark hasn't been updated in 12+ months.
-- When your golden set says something different. **Your golden set wins.**
+A few specific situations where the right answer is "stop reading the leaderboard":
 
-## Named takes
+- **When the top 5 cluster within 1–2 percentage points** on a metric your team does not directly care about. This is OmniDocBench in mid-2026 — the discrimination has compressed to inside the benchmark's own measurement noise.
+- **When the benchmark is published by the vendor whose model leads it**, and you have not yet cross-validated on a non-vendor benchmark. Vendor leaderships on vendor benchmarks are real but biased. One vendor benchmark is a signal; three independent benchmarks plus your golden set is a decision.
+- **When the benchmark has not been updated in 12+ months.** OCR benchmark leaderboards have a short half-life. A 2023 benchmark in 2026 is documenting a different problem than the one you have.
+- **When your golden set says something different.** Your golden set wins. Always. The benchmark may say Vendor A scores 84%; your golden set may say Vendor A scores 71%. The 71% is the number that matters. The benchmark documented a behavior on a distribution that is not yours.
 
-> *"OmniDocBench told us a year ago what works. It can't tell us anymore. If you're still picking vendors by their OmniDocBench number in late 2026, you're not paying attention."*
+The last point is the strongest. Public benchmarks are valuable as a shared coordinate system for the field. They are not a substitute for measuring on your own data. Teams that internalize this run vendor selection well; teams that do not get burned with predictable regularity.
 
-> *"DABstep is the only benchmark whose top score embarrasses the field. It is therefore the benchmark to watch."*
+## A note on benchmark evolution in 2027
+
+The 2026 benchmark landscape will look different in 2027. Three predictions worth flagging:
+
+- **OmniDocBench will be deprecated or replaced** as its saturation deepens. SCORE-Bench is the leading candidate to replace it; a new benchmark from a research group not yet active in 2026 is also plausible.
+- **A long-form reasoning benchmark will overtake DABstep in attention** as the parsing-quality benchmarks saturate. DABstep is the leading edge of this transition; the next benchmark will likely combine multi-document parsing with multi-step reasoning at greater scale.
+- **Cost-aware benchmarks will appear.** No 2026 benchmark integrates accuracy and cost into a single metric. Some research group will publish one in 2027, and it will be more useful for procurement than any of the accuracy-only leaderboards currently in circulation.
+
+These are predictions, not promises. Track the space; do not assume the 2026 benchmark set is the permanent set.
+
+::: {.callout-tip title="Named takes" appearance="simple"}
+*OmniDocBench told us a year ago what works. It can't tell us anymore. If you're still picking vendors by their OmniDocBench number in late 2026, you're not paying attention.*
+
+*DABstep is the only benchmark whose top score embarrasses the field. It is therefore the benchmark to watch.*
+
+*Your golden set wins. Every public benchmark documents a distribution that is not yours. Treat them as filters, not rankings.*
+:::

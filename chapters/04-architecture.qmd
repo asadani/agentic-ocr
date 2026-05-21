@@ -1,33 +1,56 @@
 # Architecture Patterns {#sec-architecture}
 
 ::: {.callout-note title="Executive summary" appearance="simple"}
-- *(Phase C)*
+- Three reference architectures dominate 2026 agentic OCR: **single-pass VLM** (Pattern A), **agentic loop with reflection** (Pattern B), and **hybrid CV+VLM** (Pattern C). Each is valid for a different intersection of document variability and stakes.
+- The choice is not "which architecture is best." The choice is "which architecture matches my workload." Pattern A is right for low-stakes, low-variability work; Pattern B is the 2026 default for general agentic workloads; Pattern C is winning the high-stakes benchmarks and the high-stakes verticals (healthcare, legal, finance) by a non-trivial margin.
+- Tool chains are not optional. A reflection loop with no specialized tools is a model talking to itself. The vendors leading 2026 benchmarks all route work to specialized extractors at the region level — that is what is winning.
+- HITL gates are not a fallback bolted on the side. In production they are part of the architecture, and the rate of escalation (1–10% in healthy deployments) is one of the most honest signals you can read about a system.
 :::
 
-::: {.callout-tip title="Drafter guidance" appearance="minimal"}
-Target ~5,000 words. See `research/00-book-outline.md` Chapter 4. Open with a real production architecture (Anterior AI + Reducto on prior-auth, 99.24% accuracy). The three patterns + decision tree are the load-bearing artifacts.
-:::
+## A working architecture, walked through
 
-## The three reference architectures
+Before the abstractions, a concrete system. Anterior AI runs healthcare prior-authorization workflows in production [@reductoagenticocr]. Their reported pipeline, simplified for the purpose of this walk-through:
 
-### Pattern A: Single-pass VLM
+A clinical packet arrives — a referral letter, an ICD-coded diagnosis sheet, a stack of supporting lab reports and prior office notes, often a fax cover page with a phone number that has been scribbled over and corrected. Total length, ten to forty pages. The packet enters a layout-first analysis: a CV model partitions every page into regions, classifies each region (header, prose paragraph, table, signature block, form field, handwritten margin note, image), and emits a region map. A router dispatches each region to the right extractor — printed text regions go through one path, hand-written notes through another, tables through a specialized table extractor, signature blocks to a stamp-and-signature classifier. The extracted regions assemble back into a structured document object whose schema is the prior-auth schema, not a generic markdown blob.
+
+A reflection step then validates the assembled object against schema rules: dates are in expected ranges, ICD codes resolve, the patient ID matches across pages, the requested procedure is on the payer's covered-procedures list. Anything that fails validation triggers either a re-extraction (with a revised prompt that names the specific issue) or, if re-extraction has burned its retry budget, an escalation to a human reviewer with the failing field highlighted on the source page.
+
+The system reports about 99.24% field-level accuracy on its golden set. The HITL escalation rate sits in the low single digits. The architecture has all three of the things the rest of this chapter is going to abstract: a layout-first decomposition, a router that sends regions to specialized tools, a reflection loop with both retry and escalation paths. It is, in 2026 vocabulary, a Pattern C architecture.
+
+This chapter unpacks the three architectures, gives you criteria for choosing between them, and is honest about the engineering each one costs.
+
+## Pattern A: single-pass VLM
+
+The simplest architecture in modern agentic OCR is the one that, by the definition in Chapter 3, barely qualifies as "agentic" at all.
 
 ```{mermaid}
-%%| fig-cap: "Single-pass VLM architecture"
+%%| fig-cap: "Pattern A — Single-pass VLM"
 flowchart LR
     A[Document image] --> B[VLM]
     B --> C[Structured output]
 ```
 
-- When this works: well-formed PDFs, small variety, low stakes, simple schemas.
-- When this fails: tables (consistently), dense layouts, long documents, anything requiring cross-region reasoning.
-- Cost profile: lowest per-page. Highest cost-per-correct-extraction in high-variability workloads.
-- Representative examples: hyperscaler APIs in their default mode; Qwen3-VL used naively.
+A document image goes in. A vision-language model emits structured output — typically JSON conforming to a schema declared in the prompt or via the model's structured-output API. There is one model call. There is no reflection, no validation loop, no specialized tool, no retry, no grounding by default. Latency is around 200ms to 2s per page depending on model and document complexity. Cost is the cost of one VLM call.
 
-### Pattern B: Agentic loop with reflection
+This architecture works, and it works well, on a specific kind of workload: documents whose layout is simple, whose tables are small or absent, whose fonts are clean, whose stakes for any single error are low, and whose schemas are stable. A consumer-facing app that lets a user photograph a receipt and pulls out total, merchant, and date is a textbook Pattern A workload. So is bulk indexing of email attachments where 95% accuracy is good enough because the only downstream consumer is a search box.
+
+Pattern A's failure modes are not edge cases; they are central tendencies of the workloads it gets misapplied to:
+
+- **Tables.** A single-pass VLM in 2026 will still routinely merge adjacent table cells, drop rows when the table crosses a page break, and confuse rowspan/colspan in tables with merged headers. This is not a model-quality problem that another year of training will fix; it is a structural limitation of single-pass extraction. The Reducto vs. hyperscaler gap on RD-TableBench — about twenty percentage points of table similarity in Reducto's favor — is the most reliable signal of this fact [@rdtablebench].
+- **Long documents.** Even with current context windows, the practical accuracy of single-pass extraction degrades over multi-page documents. The model attends to early pages well and forgets the middle. This shows up in production as fields that come from page 1 being reliably extracted and fields that come from page 8 being silently dropped.
+- **Grounding.** Pattern A emits structured output with no built-in connection to source regions. You can ask the model to include bounding-box coordinates and it will, but the coordinates are themselves model outputs — they are not ground truth, and they are wrong some non-trivial fraction of the time. Pattern A is the architecture that produces beautiful JSON that you cannot audit.
+- **Confidence.** A single-pass VLM produces output with no calibrated probability that the output is right. Anything that claims to be a confidence score in Pattern A is, at best, a model's opinion about its own work.
+
+Pattern A is not bad. It is not "agentic OCR" in the strict five-attribute sense — it satisfies, at best, two of the five attributes — but it is the right architecture for workloads where the cost of an error is low and the document variability is modest. The mistake is using it for a workload it cannot serve and then being surprised when production accuracy falls short of the demo.
+
+The 2026 representative implementations of Pattern A are the hyperscaler APIs (Google Document AI, AWS Textract, Azure Document Intelligence) running in their default modes, frontier VLM APIs called with a structured-output prompt (GPT-4V/4o, Claude, Gemini, Qwen3-VL), and the cheapest tier of specialist vendors (LlamaParse Fast, Mistral OCR 3 Standard).
+
+## Pattern B: agentic loop with reflection
+
+Pattern B is the 2026 default for general-purpose agentic OCR. It is what the field talks about when it says "agentic." It satisfies all five attributes in the Chapter 3 scorecard, and it does so without requiring the engineering investment that Pattern C demands.
 
 ```{mermaid}
-%%| fig-cap: "Agentic loop with reflection"
+%%| fig-cap: "Pattern B — Agentic loop with reflection"
 flowchart LR
     A[Document] --> B[Plan]
     B --> C[Extract pass]
@@ -40,15 +63,32 @@ flowchart LR
     G -- Yes --> H[Output + provenance]
 ```
 
-- The "default" 2026 architecture for general-purpose agentic OCR.
-- Plan → extract → critique → re-prompt → validate, with retry budgets and explicit confidence gates.
-- Representative examples: LlamaParse Agentic / Agentic Plus, Landing AI ADE, Mistral OCR 3.
-- Failure modes: silent hallucinations (the reflect step approves a wrong answer), retry-budget thrashing, unbounded latency.
+The shape is: plan, extract, critique, re-prompt if necessary, validate, output with provenance. Each step has a real engineering parameter behind it.
 
-### Pattern C: Hybrid CV + VLM (Reducto-style)
+**Plan.** The system articulates, before extracting, what it is looking for. In simpler implementations this is the schema injected into the prompt. In more sophisticated implementations the system generates a per-document extraction plan that varies by document type — different field priorities, different validation rules, different retry strategies. The plan step is what makes the architecture *goal-driven* in the Chapter 3 sense.
+
+**Extract pass.** A VLM call (or sequence of calls for long documents) produces a candidate extraction. This is structurally similar to Pattern A but happens inside a loop that knows the extraction might not be final.
+
+**Confidence check.** This is where Pattern B's engineering quality varies most between implementations. The naïve version compares a model-emitted confidence score against a threshold. The sophisticated version cross-checks the candidate extraction against external oracles — schema validators (does it parse? do dates lie in plausible ranges?), tool outputs (does the layout detector agree on where this field is?), secondary models (does a second VLM with a different prompt produce the same answer?). The difference between naïve and sophisticated confidence checks is, in practice, the difference between detection failures and detection successes.
+
+**Reflect / re-prompt.** If the confidence check fails, the system re-prompts with a revised instruction. The revision typically references the specific failure — "the date you extracted as 2026-13-45 is not valid; please re-examine the date field" — rather than rerunning the same prompt. This is why retry-thrash is a real failure mode: a system that re-prompts identically each time learns nothing and converges on nothing.
+
+**Validate.** A final structural check against the target schema. Schema validation is cheap and surprisingly diagnostic. Many extraction errors that confidence checks miss show up as schema failures (a required field is null; a numeric field contains "TBD"; an enum field contains an unexpected value).
+
+**Output with provenance.** Every field in the final output carries a pointer to the source region. This is what makes Pattern B *grounded* in the Chapter 3 sense.
+
+The retry budget — typically two to four attempts before escalation — is the most visible engineering parameter, and the one most worth asking vendors about. Too low and the system gives up on documents it could have handled. Too high and a single recalcitrant document can run up cost and latency without ever converging.
+
+Pattern B is well-suited to general-purpose agentic OCR: messy enterprise documents, mixed layouts, moderate stakes. Most LlamaParse Agentic [@parsebench2026] and LandingAI ADE [@landingade2026] deployments are Pattern B. The strengths are flexibility (one architecture handles a wide variety of document types) and engineering tractability (the loop is conceptually simple even if the implementation is not). The cost is, well, cost — multi-pass means multiple VLM calls, which means real money per page, plus the latency penalty of running through a loop.
+
+Pattern B's failure modes are subtler than Pattern A's. The architecture detects more errors but can produce silent hallucinations when the reflection step approves a wrong answer (Chapter 5 unpacks this in detail). It can also produce retry-thrash on documents that the model is genuinely incapable of extracting correctly — burning the retry budget without improving the answer. Production deployments need observability into both failure modes, and most teams discover this fact the hard way.
+
+## Pattern C: hybrid CV+VLM
+
+Pattern C is the architecture that is winning the high-stakes benchmarks and the high-stakes verticals. It is also the architecture that costs the most engineering to build and operate.
 
 ```{mermaid}
-%%| fig-cap: "Hybrid CV + VLM architecture"
+%%| fig-cap: "Pattern C — Hybrid CV+VLM"
 flowchart LR
     A[Document] --> B[Layout detector / CV]
     B --> C[Region routing]
@@ -60,27 +100,48 @@ flowchart LR
     F --> G[Output]
 ```
 
-- Layout-first segmentation, route to specialized extractors, assemble, validate.
-- State-of-the-art on adversarial tables: Reducto ~0.90 similarity on RD-TableBench, ~20pp ahead of hyperscalers.
-- Representative examples: Reducto; IBM Granite-Docling + Docling ensemble pipelines; PP-StructureV3 lineage.
-- Engineering cost is real: more components, more failure surface, more eval surface. Pays off on high-stakes, high-variability workloads.
+The core move is **layout-first decomposition**. Before any extraction happens, a computer-vision model partitions the page into regions and classifies each one. The classification is fine-grained enough to drive routing: text blocks go to a dedicated text-extraction path, tables go to a specialized table extractor, figures go to a VLM, signature blocks go to a signature classifier, handwritten regions go to a handwriting-tuned extractor.
+
+The reason this architecture wins on adversarial workloads is that **specialization beats generality where the distribution is narrow and the stakes are high**. A table extractor that has been trained specifically on tables, with table-specific evaluation metrics (Needleman-Wunsch cell alignment, header-disambiguation accuracy), is better at tables than a general VLM that has been trained on everything including tables. The Reducto result on RD-TableBench — about 0.90 cell-alignment similarity on adversarial tables, roughly twenty points ahead of the hyperscaler APIs in Pattern A — is the clearest data point [@rdtablebench]. PP-StructureV3 making the same point at under 100 million parameters, matching Gemini-2.5-Pro on OmniDocBench at a tiny fraction of the compute cost, is the strongest argument that this is structural rather than incidental [@paddleocrvl].
+
+Pattern C also has the strongest grounding story by construction. Because the system tracks regions from the layout step onward, every extracted field carries a region pointer all the way through to the output. There is no "model emitted a bounding box and we hope it's right" — the bounding box came from the layout detector, not the extractor.
+
+The cost of Pattern C is the engineering. Every component is a real piece of software with its own training data, eval, and failure modes. The layout detector needs to be accurate or every downstream extractor receives garbage. The router needs to know which extractor to send each region to, which means the classification taxonomy needs to be maintained as document types evolve. The assembler needs to handle cases where regions overlap, where the layout detector segments wrongly, where extractors disagree on overlapping regions. Each of these is solvable. None of them is free.
+
+Pattern C is what's behind Reducto's hybrid architecture, IBM Granite-Docling and the Docling pipeline framework, OpenDataLab's MinerU, and the PaddleOCR / PP-Structure lineage. It is also implicit in any in-house implementation that takes high-stakes extraction seriously enough to refuse the "one model does everything" path.
+
+The honest framing: **Pattern C is the architecture for workloads where errors cost more than engineering does**. Healthcare prior-authorization fits because a denied claim costs hundreds to thousands of dollars in downstream rework, dwarfing the marginal engineering cost of a hybrid pipeline. Legal contract review fits because a missed clause can be a six-figure legal exposure. KYC document review fits because a wrongly approved high-risk account can be a regulatory event. Commodity invoice processing rarely fits, because the marginal error cost is too low to justify the engineering.
 
 ## Tool chains, memory, and HITL gates
 
-- Tool inventory in a production agentic OCR system: layout detector, table extractor, schema validator, KB lookup, redaction, classification, fallback OCR.
-- Memory: short-term (page-local context) vs. long-term (cross-document priors, vendor-specific corrections from HITL).
-- HITL gates: where they go in the loop (post-validation, pre-output), how they feed back into memory, how their accept/reject rate becomes the production accuracy signal (Chapter 11).
+The three patterns above describe the extraction core. Production agentic OCR systems have additional components that the simplified diagrams elide.
+
+**Tool inventory.** A production system typically has access to: a layout detector (Pattern C central; optional for Pattern B), a table extractor, a schema validator (always), an external knowledge-base lookup for entity resolution (vendor IDs, ICD codes, ISO country codes), a redaction module for PII, a classification model for document-type routing, and a fallback OCR for when the primary extractor fails. Tool-using in the Chapter 3 sense means these are routinely invoked, not just technically available.
+
+**Memory.** Short-term memory carries context within a single document — heading hierarchy, units of measurement, vendor identity established on page 1 — into extractions on later pages. Long-term memory carries vendor-specific corrections from HITL queues back into prompts, document-type priors learned across deployments, and audit logs of model behavior for drift detection. Few public vendors talk much about their memory architectures, but the gap between vendors that have solid memory engineering and those that do not is sharply visible in production over a six-month window.
+
+**HITL gates.** Every production architecture has a path to a human reviewer. The question is where in the pipeline the gate sits. The healthier patterns place HITL gates post-validation, before output, with the failing field highlighted on the source page and the candidate extraction pre-populated for the reviewer to accept, reject, or correct. The unhealthier patterns dump entire documents into a queue with no annotation, requiring the reviewer to find the issue manually. The healthy version cuts reviewer time per case from minutes to seconds.
+
+The escalation rate is one of the most diagnostic production signals. A healthy 2026 agentic OCR deployment escalates somewhere between 1% and 10% of documents. Below 1% suggests the system is silently swallowing errors that should have escalated; above 10% suggests the extraction is too unreliable for the workload (or that the eval rules are too strict, but that's the easier failure to diagnose).
 
 ## Choosing between the three patterns
 
-- Decision-tree diagram (refined version of the one in Chapter 9).
-- The two axes that matter: **document variability** (narrow vs. wide) and **stakes** (low vs. high).
-- Narrow + low: Pattern A is fine.
-- Wide + low: Pattern B.
-- High stakes (any variability): Pattern C with HITL.
+The decision reduces to two axes: **document variability** and **stakes**.
 
-## Named takes
+- **Narrow variability, low stakes** → Pattern A. Don't pay for a loop you don't need.
+- **Wide variability, low or moderate stakes** → Pattern B. The 2026 sweet spot for most enterprise agentic OCR.
+- **High stakes, any variability** → Pattern C with HITL gates. Engineering cost pays for itself fast when the alternative is downstream rework cost.
 
-> *"If your architecture has no place for a table-specific tool, you're betting the model is uniformly good at everything. Twelve months of leaderboards say it isn't."*
+Volume modifies the decision but does not change its shape. At very low volume (under 10k pages/month), Pattern A via a hyperscaler API is almost always the right choice regardless of stakes — the math does not support investing in Pattern B or C until volume justifies it. At very high volume (millions of pages/month), the open-source Pattern B or C path (Granite-Docling, PaddleOCR + Pattern C orchestration, OlmOCR-2 self-hosted) starts to pay for itself versus commercial APIs.
 
-> *"Hybrid CV+VLM is winning the table benchmarks for the same reason ensembles win on tabular ML: specialization beats generality where the distribution is narrow and the stakes are high."*
+A practical heuristic: **build the simplest pattern that satisfies your error budget, not the most sophisticated pattern your engineering can support**. Sophistication has a maintenance cost. The vendors that look impressive at demo time but become operational burdens six months in are almost always the ones who deployed Pattern C when Pattern B would have done the job.
+
+The chapters that follow assume these three patterns as vocabulary. When Chapter 7 ranks commercial vendors, the ranking implicitly is "which pattern do they implement well, and at what price." When Chapter 11 talks about evaluation, the rubric varies by pattern (the metrics that matter for Pattern A are not all the same as the metrics that matter for Pattern C). When Chapter 13 enumerates anti-patterns, several of them are specific ways each of the three patterns fails when misapplied.
+
+::: {.callout-tip title="Named takes" appearance="simple"}
+*If your architecture has no place for a table-specific tool, you're betting the model is uniformly good at everything. Twelve months of leaderboards say it isn't.*
+
+*Hybrid CV+VLM is winning the table benchmarks for the same reason ensembles win on tabular ML: specialization beats generality where the distribution is narrow and the stakes are high.*
+
+*Build the simplest pattern that satisfies your error budget. Sophistication you do not need is technical debt with a long fuse.*
+:::

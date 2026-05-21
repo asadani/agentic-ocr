@@ -1,65 +1,143 @@
 # What Agentic OCR Actually Is {#sec-what-it-is}
 
+
 ::: {.callout-note title="Executive summary" appearance="simple"}
-- *(Phase C)*
+- Agentic OCR is a document-processing system that is **goal-driven, multi-pass, self-correcting, tool-using, and grounded**. All five attributes must be present. Three out of five is "VLM with retries," not agentic OCR.
+- The reason the definition matters is that the word "agentic" is the marketing differentiator that lets vendors charge ten times more for what may or may not be a retry loop. The five-attribute test gives you a defensible procurement filter.
+- **Grounding is the line.** A system that cannot point at the pixels that produced a field is not doing agentic OCR. It is producing confident hallucinations with structure.
+- This chapter is the load-bearing chapter for the rest of the book. Later chapters on architecture, vendor selection, anti-patterns, and evaluation all assume the definition established here.
 :::
 
-::: {.callout-tip title="Drafter guidance" appearance="minimal"}
-Target ~3,000 words. See `research/00-book-outline.md` Chapter 3. The five-attribute scorecard is the load-bearing artifact of this chapter — it gets referenced by every later chapter.
-:::
+## Three demos walk into a procurement meeting
+
+Picture three vendor demos, one after another.
+
+**Demo One** is a frontier-model API. The salesperson uploads a scanned invoice; the model returns clean JSON; the audience claps. There is one model call. The system answers in a second and a half. The system has no idea whether its answer is right.
+
+**Demo Two** is a CV-plus-VLM specialist. The salesperson uploads a much messier document — handwritten notes in margins, a nested table, a stamp partially obscuring a field. A pipeline appears: a layout detector segments the page into regions; a text extractor handles the prose blocks; a separate model handles the table; a schema validator checks the output; a confidence score below threshold triggers a re-extraction with revised instructions; a final assembler stitches the regions back together with provenance pointers. The audience claps because they recognize *engineering*.
+
+**Demo Three** is a Tesseract pipeline with an LLM post-processor that "cleans up" the OCR output. The salesperson uploads a moderately messy invoice; the system extracts text; the LLM rewrites it into JSON. The salesperson calls this "agentic OCR." The audience claps because, by 2026, "agentic" is the word that gets the room.
+
+Only one of these is actually agentic OCR. This chapter will tell you which one, and why it matters. The cost difference between them is roughly an order of magnitude. The accuracy difference, on a sufficiently messy real-world workload, is also roughly an order of magnitude.
 
 ## Definition
 
-- Working definition (single sentence): *Agentic OCR is a document-processing system that is goal-driven, multi-pass, self-correcting, tool-using, and grounded.*
-- All five attributes must be present. Three of five is "VLM with retries," not agentic OCR.
-- Why the definition matters: the term is being load-bearing in 2026 marketing and procurement decisions.
+The working definition that the rest of this book uses:
+
+> *Agentic OCR is a document-processing system that is goal-driven, multi-pass, self-correcting, tool-using, and grounded.*
+
+All five attributes must be present in a system for the term to apply. The five are not a wishlist. They are interlocking — each one fills a gap the others cannot fill on their own — and a system missing any one of them has a predictable failure mode that the marketing language often hides.
+
+The five attributes, expanded:
 
 ## The five attributes
 
 ### Goal-driven
 
-- Operates against a **structured target** (a schema, an extraction goal, a downstream contract), not just "extract the text."
-- Plan-then-execute behavior. The system can articulate what it's looking for before it looks.
-- Anti-pattern: a model that emits markdown and hopes the downstream system figures it out.
+A goal-driven system operates against a **structured target**, not against the document. The target is the schema, the extraction goal, or the downstream contract that the output has to satisfy. The system plans its extraction against that target.
+
+This matters because the alternative — "extract everything" — produces output that is structurally indistinguishable from a fancy `cat` command piped into a markdown formatter. The single-pass VLM era of 2022–2024 was full of such systems. They emitted markdown or HTML; they expected the downstream consumer to figure out what it cared about; they treated the document as the unit of analysis.
+
+A goal-driven system treats the **schema** as the unit of analysis. Given a "vendor invoice" schema with fields like `invoice_number`, `total_amount`, `line_items[]`, the system plans an extraction that looks for those specific fields, succeeds or fails on each one independently, and reports per-field provenance. The same document fed to two different schemas produces two different extractions, and both are correct on their own terms.
+
+The smell test: ask a vendor what their system does when you change the schema. If the answer involves changing a template, building a new model, or "let us run it through our pipeline and see," it is not goal-driven. A goal-driven system takes the schema as input and adapts.
 
 ### Multi-pass
 
-- Iterates rather than emits-and-exits. At least one self-review pass.
-- Includes the possibility of re-extraction with revised strategy (not just re-running the same prompt).
-- The "loop" is not optional. A single-pass VLM is not agentic, even if it scores well.
+A multi-pass system iterates rather than emits-and-exits. It runs at least one self-review pass, and ideally more than one when the first pass fails its own checks.
+
+This is the attribute that most distinguishes agentic OCR from its single-pass VLM ancestor. A single-pass VLM extracts once. If the extraction is wrong, the system does not know. A multi-pass system extracts, checks (via a schema validator, a secondary model, a tool output, or a confidence calibration), and re-extracts if the check fails.
+
+The retry budget is real engineering. Typical agentic OCR systems run two to four retries before escalating to a human. The choice of retry budget is a tradeoff: more retries means more cost and more latency, but also more chances to catch errors. Vendors that hide this number from you are not doing you a favor.
+
+The smell test: ask a vendor how many model calls their system makes per document on average. If the answer is "one," it is not multi-pass. If the answer is "it depends on the document complexity," you are talking to someone who has thought about this seriously.
 
 ### Self-correcting
 
-- Three subsystems: **detection** (knowing you're wrong), **repair** (fixing it), **escalation** (failing safely). Full treatment in Chapter 5.
-- Crucial: detection without ground truth is a model talking to itself. Real self-correction needs an external oracle (tool output, schema validation, or HITL).
+Self-correction is the most over-loaded attribute in the vendor lexicon. The phrase covers three concrete subsystems, and most vendors who use the term have, at best, one of the three working.
+
+The three subsystems are:
+
+- **Detection** — knowing that an extraction is wrong. This requires either an external oracle (a schema validator, a secondary model, a tool output) or a calibrated confidence signal that actually correlates with accuracy on out-of-distribution data.
+- **Repair** — fixing the detected error. This is usually a re-extraction with revised instructions, but it can also be a routing decision (send this region to a different tool) or a contextual lookup (resolve this entity against an external knowledge base).
+- **Escalation** — failing safely when detection or repair cannot close the loop. Escalation routes the document to a human reviewer with the relevant context attached.
+
+Chapter 5 unpacks each of these in depth. For the definition, the load-bearing fact is that **all three are required**. A system that detects but cannot repair is a half-built loop. A system that repairs but cannot escalate gracefully will, eventually, lose customers' trust on the documents it could not fix. A system that escalates without detection is just a queue with extra steps.
+
+Most production failures in agentic OCR are **detection failures**, not repair failures. The model never noticed the error. This is the deepest reason that confidence scores from VLMs need to be treated as ordinal signals at best — they are an opinion the model has about its own work, and opinions are not the same as ground truth.
+
+The smell test: ask a vendor what their system does when its first extraction is wrong but the confidence score is high. A good answer involves an external oracle. A bad answer is "we re-prompt the model" — that is the model talking to itself.
 
 ### Tool-using
 
-- Invokes specialized tools: layout detectors, table extractors, OCR for region, schema validators, external lookups (KB, normalization).
-- Why this matters: leaderboards in 2026 show specialization beats generality at the high-stakes margin (Reducto on RD-TableBench, PP-StructureV3 at <100M params).
-- Tool-using ≠ "the LLM has access to a function call." It means the model **routinely** invokes tools as part of its workflow, and the workflow is designed around that.
+A tool-using system invokes specialized tools as a routine part of its workflow. The tools are real software: a layout detector, a table extractor, a schema validator, a KB lookup, a fallback OCR engine, a redaction module, a classification model.
+
+This is where the 2026 leaderboards have been most clarifying. **Specialization beats generality on adversarial workloads.** Reducto's hybrid CV-plus-VLM architecture sits at the top of RD-TableBench at roughly 0.90 similarity — about twenty percentage points ahead of the hyperscaler APIs, all of which use general-purpose VLMs without specialized table tooling [@rdtablebench]. PP-StructureV3, at under 100 million parameters, matches Gemini-2.5-Pro on OmniDocBench precisely because it is a layout-specialized model and not a general one [@paddleocrvl].
+
+The thing tool-using is *not* is "the model has access to a function call." It is the routine orchestration of specialized tools as part of the workflow. A model that *could* call a table tool but in practice almost never does is not tool-using; it is tool-capable. The distinction matters because the operational reliability of the system depends on the tools being invoked predictably, on the workflow being designed around tool use, and on the tool failures being handled gracefully.
+
+The smell test: ask a vendor for an architecture diagram of their system. If it shows a single model in the middle with an arrow labeled "extraction," it is not tool-using. If it shows a router that dispatches regions to specialized handlers, it is.
 
 ### Grounded
 
-- Every output field can be traced back to a region of the source document.
-- Why this matters beyond compliance: grounding is what makes self-correction's *detection* step possible. You cannot critique an answer you cannot localize.
-- ParseBench's grounding dimension and Reducto's hybrid architecture both treat grounding as load-bearing, not optional.
+A grounded system traces every output field back to a region of the source document.
 
-## What it is not
+In practice, this means each extracted field carries metadata: the page number, the bounding box, often the specific text span. The downstream consumer can render the output alongside the document with the cited region highlighted; the compliance auditor can verify the extraction; the human reviewer can correct it efficiently by pointing at the right place.
 
-- **Classic OCR with a confidence threshold.** Confidence gating is a feature of agentic OCR, not the definition.
-- **A single-pass VLM.** Even GPT-4V on a document is not agentic; it is one extraction call.
-- **Template-bound IDP with an LLM cleanup step.** This is wrapper-washing (Chapter 13). The template is still load-bearing; the LLM is decoration.
-- **An LLM with one function-calling tool.** Tool-using means routinely-orchestrated, not technically-possible.
+Grounding sounds like a compliance feature. It is also the structural prerequisite for everything else in this list. Without grounding:
+
+- **Self-correction's detection step is impaired.** You cannot reliably critique an answer you cannot localize. "Is this $10,000 right?" is much easier to answer when you can point at the pixels that produced it than when you have only the text.
+- **Tool-using suffers.** Routing a region to a specialized tool requires knowing where the region is. A system that does not track regions has nothing to route.
+- **HITL escalation degrades.** A human reviewer presented with an ungrounded JSON object and a fifty-page PDF will spend most of their time scrolling. A reviewer presented with the same JSON and a highlighted source region resolves the case in seconds.
+
+Grounding is the line. A system that cannot point at the pixels that produced a field is not doing agentic OCR. It is producing confident hallucinations with structure.
+
+The smell test: ask a vendor to show you, in their UI, the source region for a specific output field. If the answer involves a screen-recording delay, a developer pulling up a debug log, or the phrase "we can add that," it is not grounded.
 
 ## The five-attribute scorecard
 
-A 5-row, 3-column comparator (classic OCR / single-pass VLM / true agentic) marking each attribute Yes / No / Partial. Use this everywhere a vendor demo claims "agentic" and you want a defensible counter.
+Use this as a procurement filter.
 
-*(Table to be rendered from inline data in Phase C.)*
+| Attribute | Classic OCR | Single-pass VLM | True agentic OCR |
+|---|---|---|---|
+| Goal-driven | No | Partial | Yes |
+| Multi-pass | No | No | Yes |
+| Self-correcting | No | No | Yes |
+| Tool-using | No | No | Yes |
+| Grounded | Partial (bboxes) | No | Yes |
 
-## Named takes
+Classic OCR scores partial on grounding only because it does produce per-word bounding boxes. It scores zero on every other attribute because OCR was never designed to do those things; it was designed to convert images to text.
 
-> *"'Agentic' is the word that lets people charge 10× for a retry loop. The five-attribute test exists so you don't get fooled."*
+Single-pass VLMs score partial on goal-driven because most modern VLMs do accept structured-output prompts (a schema in the prompt, JSON mode, function calling). They score zero on the other attributes, in the strictest reading, because a single model call cannot be multi-pass, cannot self-correct, cannot route to tools, and emits ungrounded output by default. Adding a retry wrapper around a VLM call gets you partial credit on multi-pass and self-correction, but it does not get you to "true agentic." That is wrapper-washing (Chapter 13).
 
-> *"Grounding is the line. If your system can't point at the pixels that produced a field, it isn't doing agentic OCR — it's doing confident hallucination."*
+True agentic OCR scores yes on all five. There is no half-credit row in this table for the systems this book is about. A system missing any one attribute has a predictable, named failure mode that the rest of the book will return to repeatedly.
+
+## What it is not
+
+The definition is sharpest when you also say what falls outside it.
+
+**Classic OCR with a confidence threshold is not agentic OCR.** Confidence gating is a feature of agentic OCR; it is not the definition. A Tesseract pipeline that re-runs on low-confidence regions has one of five attributes (a weak version of self-correction) and zero of the other four. Marketing such a system as "agentic" is the wrapper-washing anti-pattern.
+
+**A single-pass VLM is not agentic OCR.** Even GPT-4V on a document, even with a beautifully crafted prompt that requests grounded structured output with confidence scores, is one extraction call. Single-pass VLMs are valuable. They are not agentic OCR. The category exists for systems that *iterate*.
+
+**Template-bound IDP with an LLM cleanup step is not agentic OCR.** The template is still load-bearing; the LLM is decoration. If removing the LLM cleanup step would cause the system to fail gracefully on unchanged documents, the LLM is the agentic part. If the system breaks on unchanged documents without the LLM, the LLM is doing real work. Most systems sold as "agentic" by classic-IDP vendors are in the first category.
+
+**An LLM with one function-calling tool is not agentic OCR.** Tool-using means routinely orchestrated tools, not technically-possible tools. A vendor whose architecture diagram has one box labeled "the LLM can call a table tool if needed" is showing you a feature, not an architecture.
+
+These four anti-categories cover, in the author's experience, well over half of all vendor pitches that use the word "agentic." The five-attribute test is the defense.
+
+## Why the definition matters more than the word
+
+A working definition is more important than a label, but the label is doing real work in 2026 procurement. The word "agentic" appears in vendor pricing pages where, three years ago, the same systems were sold as "intelligent" or "AI-powered" without a price premium. The premium is real; it averages roughly five to ten times the per-page cost of the prior generation. Some of that premium reflects genuinely new capability. Some of it is a relabeling.
+
+The five-attribute test is a way to tell which is which. It is also a way to talk to vendors in a structured way. A vendor who can answer all five smell tests has thought seriously about the architecture. A vendor who deflects on one or two of them has gaps. A vendor who deflects on three or more is selling marketing.
+
+The chapters that follow assume this definition. When Chapter 4 lays out the three reference architectures, every one of them satisfies all five attributes; that is what makes them reference architectures. When Chapter 7 ranks commercial vendors, the ranking implicitly weighs how convincingly each one satisfies the five. When Chapter 13 enumerates anti-patterns, every anti-pattern is a way of failing the five-attribute test.
+
+Hold onto the test. It is the most useful procurement tool this book offers.
+
+::: {.callout-tip title="Named takes" appearance="simple"}
+*"Agentic" is the word that lets people charge 10× for a retry loop. The five-attribute test exists so you don't get fooled.*
+
+*Grounding is the line. If your system can't point at the pixels that produced a field, it isn't doing agentic OCR — it's doing confident hallucination.*
+:::

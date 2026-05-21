@@ -1,51 +1,108 @@
 # Conclusion: Where 2027 Goes {#sec-conclusion}
 
 ::: {.callout-note title="Executive summary" appearance="simple"}
-- *(Phase C)*
-:::
-
-::: {.callout-tip title="Drafter guidance" appearance="minimal"}
-Target ~2,500 words. See `research/00-book-outline.md` Chapter 15. The shortest chapter. Forecasts, not exhaustive coverage. One strong named take.
+- **Parsing quality is commoditizing.** The open-source frontier (Chandra, OlmOCR-2, Granite-Docling, PP-StructureV3) is at or near parity with proprietary systems. By the end of 2027 there will not be a meaningful parsing-quality moat for English-language structured documents.
+- The 2027 moats are forming around **agentic orchestration, observability, HITL workflows, compliance posture, and vertical specialization** — not around raw extraction. Vendors building those layers will outlast vendors competing on benchmark scores.
+- Three open research problems will dominate the next eighteen months: **empirical failure-mode taxonomies** from production deployments, **long-form benchmarks** that go beyond DABstep, and **cost-aware evaluation** that integrates accuracy with TCO into a single metric procurement can use.
+- The thesis of this book: **reading is the ceiling on agent quality, and reading is mostly solved**. The next ceiling is **trust** — observable, calibrated, auditable agentic behavior. That is the book to write next.
 :::
 
 ## What's about to commoditize
 
-- **Parsing quality** is approaching saturation across both open and closed leaderboards. The top of olmOCR-Bench (Chandra 83.1, OlmOCR-2 82.3) is open-source and Apache/OpenRAIL-licensed.
-- The implication: by mid-2027, the parsing-quality gap between open-source and commercial will be negligible for English-language documents.
-- What commoditizes faster: single-pass VLMs, table extraction, basic structural understanding.
-- What commoditizes slower: grounding accuracy, multi-lingual coverage, scientific-document handling.
+The clearest 2026 signal in the public benchmarks is that parsing quality is approaching saturation.
+
+OmniDocBench top scores cluster within a percentage point of one another. The olmOCR-Bench leaderboard's top three (Chandra, OlmOCR-2, dots.ocr) are within four points of each other, all open-source, all license-friendly to most enterprises. The PP-StructureV3 result on OmniDocBench — matching Gemini-2.5-Pro at under 100M parameters — argues that the parsing problem can be solved with specialized small models, which is the leading indicator for commoditization in any technology category.
+
+The implication for 2027: **the parsing-quality moat is going to disappear** for English-language structured documents. By mid-2027, no vendor will be able to credibly claim "we have meaningfully better parsing accuracy than the open-source frontier" on the majority of enterprise document types. The vendors that survive will not be the ones with the best models; they will be the ones with the best surrounding platform.
+
+What will commoditize fastest:
+
+- **Single-pass VLM extraction.** Already commoditized by mid-2026; frontier models from any major lab can do credible structured extraction with a structured-output prompt.
+- **Basic table extraction.** Reducto's RD-TableBench lead is real but the open-source side (MonkeyOCR v1.5, PP-StructureV3) is catching up fast. By 2027, "we handle tables well" stops being a differentiator and starts being table stakes.
+- **Multilingual coverage.** PaddleOCR-VL at 109 languages, DeepSeek-OCR at ~100 languages, Chandra at 40+ languages — the open-source side is solving this faster than the commercial side. Vendors selling "we handle 50 languages" as a feature will sound dated by 2027.
+
+What will commoditize more slowly:
+
+- **Grounding accuracy.** The technical capability exists, but the surrounding infrastructure (audit trails, region-tracking through chunking, citation-rendering UIs) is engineering-heavy. Open-source models have grounding outputs; few open-source *systems* do grounding well end-to-end.
+- **Scientific and technical documents.** MinerU 2.5 and the open-source scientific-document tier are competitive on this workload, but commercial vendors continue to lead on the long tail (rare equation notations, niche scientific layouts, languages with limited training data).
+- **High-stakes vertical compliance.** Healthcare BAA workflows, regulated financial document extraction, legal discovery with chain-of-custody requirements — the commercial vendors' procurement and compliance maturity remains a real moat through 2027.
 
 ## Where moats are forming
 
-- **Agentic orchestration platforms.** LlamaIndex, Landing AI ADE, Databricks Document Intelligence. Owning the workflow, not just the model.
-- **Compliance + grounding infrastructure.** Reducto's hybrid architecture with audit trails. Anterior AI's fairness eval methodology. ZDR commitments.
-- **Observability for document agents.** Currently a gap. The 2027 land-grab is for "Datadog for document agents" — instrumented, attributable, debuggable agentic workflows.
-- **Vertical specialization.** Healthcare (post-CMS rule), legal contract review, financial filings. Vendors that go deep on one vertical outperform horizontals.
+If the parsing-quality moat is disappearing, the obvious question is: what is replacing it? Four categories are visible in the 2026 landscape and are likely to deepen through 2027.
+
+### Agentic orchestration platforms
+
+The vendors that own the *workflow* around document understanding — not just the model that does extraction — have the strongest 2027 position. LlamaIndex with the LlamaParse + LlamaIndex stack is the canonical example. Landing AI ADE is building toward this with its expanded ontology and chunk-classification work. The platform tier (Databricks Document Intelligence, eventually Snowflake and Microsoft Fabric equivalents) is the institutional version of the same move.
+
+The moat is integration depth, not parsing accuracy. A team that has built its agentic workflow on LlamaIndex's primitives cannot easily switch to Reducto for parsing without rebuilding the orchestration layer. The switching cost is the moat; the orchestration platform is the lock-in.
+
+### Compliance and grounding infrastructure
+
+The 2027 procurement question that will increasingly determine vendor selection: *can you prove, to a regulator, where every extracted field came from?* The vendors that can answer this with a one-click audit trail will outsell vendors that have to engineer the answer per-customer.
+
+Reducto's hybrid architecture with audit trails. Landing AI ADE's HIPAA + ZDR posture. Anterior AI's published fairness-evaluation methodology for healthcare prior-auth. These are not marketing differentiators; they are the table stakes for any vendor selling into healthcare, finance, or government in 2027.
+
+The companies that retrofit compliance late will lose deals to companies that built compliance in from the start. The gap is widening, not narrowing, through 2026 and into 2027.
+
+### Observability for document agents
+
+This category does not yet exist as a coherent product in 2026. By the end of 2027, it will be one of the most active areas of investment in the agentic-OCR ecosystem.
+
+The need is concrete: production agentic OCR systems are black boxes from the operator's perspective. Why did the system escalate this document? Why did the reflection loop accept that wrong answer? What is the calibration trend over time? Which prompt variants are converging on this output? Current tooling — vendor dashboards, custom dashboards stitched together from API logs — answers these questions poorly.
+
+The opportunity: a Datadog-equivalent observability layer for agentic document workflows. Extraction lineage. Calibration trending. Escalation-rate decomposition by field, document type, and OOD detector signal. Drift alerting. Reviewer-correction pattern analysis.
+
+The pure-play vendors that try to be everything will struggle here; the specialized observability tools that integrate across vendor stacks will win. Expect the first credible such product by mid-2027 and meaningful market share by end of 2027.
+
+### Vertical specialization
+
+Healthcare won 2026. The CMS prior-authorization rule, the public-reporting forcing function, and the early case studies (Anterior AI + Reducto reaching 99.24%) created a vertical where agentic OCR has clear, measurable, large ROI.
+
+The vertical pattern will repeat. Legal contract review is partway through the same curve — clear ROI, large volume, regulatory pressure (less than healthcare, but rising). Financial services KYC and AML compliance are similar. Insurance claims adjudication. Government benefits administration. Each of these has a specific document distribution, a specific regulatory regime, and an ROI threshold that agentic OCR can clear.
+
+Vendors that go *deep* on a vertical — not just adding "healthcare" to their feature list, but building the specific workflows, schemas, regulatory mappings, and HITL operations that the vertical requires — will outperform horizontal vendors in their chosen verticals. Expect a wave of vertical-specialist agentic-OCR vendors in 2027, some of them spinning out from the existing horizontal vendors, some of them new entrants targeting verticals the incumbents have not focused on.
 
 ## Open research questions
 
-- **Empirical failure-mode taxonomies** from production deployments, not labs. The "Tiny Silent Hallucinations" paper is the start.
-- **Long-form benchmarks** beyond DABstep. The 14.55% ceiling on hard tasks is a five-alarm signal.
-- **Cost-aware evaluation.** Joint accuracy/cost/latency benchmarks. No public benchmark does this well yet.
-- **Calibrated confidence.** Out-of-distribution calibration on document VLMs remains an open problem.
-- **Reasoning-extraction separation.** How to evaluate them jointly without conflating their failure modes.
+Three problems are likely to dominate the research conversation in agentic OCR through 2027 and into 2028. None of them is at the model-architecture layer (the model layer is increasingly mature); all are at the system-operation layer.
+
+**Empirical failure-mode taxonomies from production deployments.** The "Tiny Silent Hallucinations" paper [@tinysilent2026] is the leading example of this genre — careful documentation of failure modes from real systems, with diagnostic and mitigation suggestions. The field needs much more of this. Most failure-mode discussion in 2026 is anecdotal or vendor-internal; what is needed is reproducible, cross-vendor, real-production characterization. Expect three to five major papers in this direction by end of 2027.
+
+**Long-form benchmarks beyond DABstep.** DABstep [@dabstep2025] is the leading edge of multi-step reasoning evaluation, but its small N (450 tasks) and narrow distribution (Adyen's operational workloads) limit its general usefulness. The next-generation benchmark will combine multi-document parsing with multi-step reasoning at larger scale, across diverse domains, with both extraction-success and reasoning-success measured separately. This is more engineering than it sounds; the benchmark that does this well will take a research group eighteen months to build and will reshape the conversation when it lands.
+
+**Cost-aware evaluation.** No 2026 benchmark integrates accuracy and cost into a single metric. The procurement-relevant question — what is the cost-per-correct-extraction-with-provenance on a representative production distribution — is asked by every procurement process and answered by none of the public benchmarks. A benchmark that gets this right would be enormously useful and will probably be published in 2027 by either a research group with industry connections or an industry consortium with research credibility.
+
+Honorable mentions: calibrated-confidence research (the OOD calibration problem remains genuinely open), reasoning-extraction separability (operationally important, conceptually under-explored), and the human-in-the-loop economics (under-studied because it requires production data that vendors guard carefully).
 
 ## What to watch in 2027
 
-- A new benchmark that supersedes OmniDocBench. SCORE-Bench is the candidate.
-- Consolidation among classic IDP vendors. Several are likely M&A targets.
-- The first "agentic-OCR-as-foundation-model" play — a model trained from scratch with multi-pass extraction as the objective, not retrofitted from a general VLM.
-- Hyperscaler agentic OCR catching up. Google, AWS, and Azure are all building. Watch for major releases at re:Invent and Google Cloud Next 2027.
-- Open-source closing the orchestration gap — there is no production-grade open-source equivalent of LlamaParse Agentic. That will change.
+Five concrete things to watch through 2027:
+
+**A new benchmark supersedes OmniDocBench.** SCORE-Bench is the leading candidate; an alternative from a research group not yet active in 2026 is plausible. Whoever publishes the successor sets the procurement conversation for the next eighteen months.
+
+**Consolidation among classic IDP vendors.** Hyperscience, ABBYY, Klippa, Rossum, UiPath Document Understanding, Docsumo, Nanonets — the field has more vendors than the market structure supports. Expect at least two acquisitions in 2027, possibly more if a hyperscaler decides to enter the IDP market by buying rather than building.
+
+**The first "agentic-OCR-as-foundation-model" play.** A model trained from scratch with multi-pass agentic extraction as the training objective, not retrofitted from a general VLM. This is harder than it sounds and will probably take research effort rather than vendor effort to produce. Likely candidates: AllenAI (continuing the olmOCR line), an academic group, or possibly Mistral or another open-weight foundation-model vendor that wants document-AI as a strategic capability.
+
+**Hyperscaler agentic OCR catching up.** Google, AWS, and Azure all have agentic-OCR work in progress in 2026. The hyperscaler product cycles are slow, but the resources behind them are enormous. By end of 2027, expect at least one of the three to have closed the agentic-feature gap with the AI-native specialists, at least on common workloads. The platform-integration advantage will then become decisive for enterprise procurement.
+
+**Open-source closing the orchestration gap.** There is no production-grade open-source equivalent of LlamaParse Agentic or LandingAI ADE in 2026. The Docling framework is the closest, but it is a glue layer rather than a complete orchestration product. Expect this to change — possibly through a new open-source project, possibly through one of the existing frameworks (LangChain, LlamaIndex itself in its OSS form) maturing into the orchestration role. The end-state, by 2028, is a credible open-source path for end-to-end agentic OCR.
 
 ## Final word
 
-The 2024–2026 period was about proving that agentic OCR works. That work is done. The vendors exist; the benchmarks exist; the production deployments exist; the case studies exist.
+The 2024–2026 period was about proving that agentic OCR works. That work is largely done. The vendors exist; the benchmarks exist; the production deployments exist; the case studies exist. A buyer in 2026 who concludes that agentic OCR is a real category of technology with real applications is making the correct conclusion.
 
-2027 is about making it **reliable enough to trust without checking**. That's a different problem. It is the observability problem, the calibration problem, the HITL-economics problem, and the long-form-reasoning problem — all at once.
+The 2027–2028 period is about making agentic OCR **reliable enough to trust without checking**. That is a different problem. It is the observability problem (can you tell what the system is doing?). It is the calibration problem (when the system says it is confident, is it actually right?). It is the HITL-economics problem (how do you reduce reviewer load by 90% without losing the 10% of cases that absolutely need human eyes?). It is the long-form-reasoning problem (when extraction is perfect, why does downstream behavior still fail?). All of these will be open in 2027, and the field's progress on them will determine whether agentic OCR remains a buzzword or becomes infrastructure.
 
-The thesis of this book is that **reading is the ceiling on agent quality, and reading is mostly solved**. The next ceiling is **trust**. That's the book to write next.
+The thesis of this book, restated for the final time: **reading is the ceiling on agent quality in 2026, and reading is mostly solved**. The next ceiling is **trust**.
 
-## Named take
+That is the book to write next.
 
-> *"In 2027, nobody will talk about parsing accuracy. They will talk about agent observability. That's the wave that's about to break."*
+::: {.callout-tip title="Named takes" appearance="simple"}
+*In 2027, nobody will talk about parsing accuracy. They will talk about agent observability. That's the wave that's about to break.*
+
+*Parsing quality will commoditize. Compliance, observability, HITL, and vertical specialization will not. Build vendor relationships and engineering capacity around the things that will not commoditize.*
+
+*The 2026 question was "does agentic OCR work?" The answer is yes. The 2027 question is "can you trust it?" The answer is partial.*
+:::

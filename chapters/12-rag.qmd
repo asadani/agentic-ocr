@@ -1,20 +1,29 @@
 # Agentic OCR and RAG {#sec-rag}
 
 ::: {.callout-note title="Executive summary" appearance="simple"}
-- *(Phase C)*
+- **Bad parsing kills RAG silently.** Retrieval returns plausible-looking chunks; the generator answers fluently from them; the answer is wrong; the system has no way to know. The user-facing failure rate diverges from internal retrieval metrics, and most teams discover this only after a high-visibility incident.
+- Agentic OCR helps RAG in three concrete ways: **structural metadata** for semantic chunking, **table awareness** that respects cell relationships, and **grounding back to source** that makes citations real and audits possible.
+- **OCR is not always your RAG bottleneck.** If your documents are clean native PDFs or HTML, the parsing layer is probably not the limit on quality; retrieval, embedding, or generation usually is. Diagnose the chain before you upgrade — "we need better OCR" is sometimes a $100k–$500k diagnostic mistake.
+- RAG evaluation that does not include questions whose answers live in tables is RAG evaluation that lies. Tables are 30%+ of enterprise document content and 80%+ of the parsing errors. Build the table evals first.
 :::
 
-::: {.callout-tip title="Drafter guidance" appearance="minimal"}
-Target ~4,500 words. See `research/00-book-outline.md` Chapter 12. Open with the RAG system scoring 92% on internal eval and 41% in production — the eval has no table questions.
-:::
+## A representative production failure
+
+A common 2026 incident report, summarized to its operational shape:
+
+A bank deploys an internal RAG system that lets compliance officers ask questions over its document corpus — policies, procedures, regulatory filings, vendor agreements. The team builds the system on a standard stack: PDF parsing (a hyperscaler API in default mode), fixed-window chunking, OpenAI embeddings, a vector store, and a frontier LLM for generation. They run an internal evaluation against 200 hand-curated QA pairs and the system scores 92%. Confident in the result, they ship to a pilot group of compliance officers.
+
+Three months later, the pilot's user-satisfaction survey reports an answer-quality score equivalent to about 41% correctness. The team is initially puzzled — the internal eval still shows 92% — and then they sit down with five of the pilot users and run real queries.
+
+The problem becomes immediately visible. The system handles prose-based questions ("What is our policy on third-party data sharing?") well. It handles structural-fact questions ("Who is the named contact in our Acme vendor agreement?") well. It fails — silently, fluently, confidently — on questions whose answers live in tables. "What were our average prior-auth turnaround times for cardiology procedures in Q3?" The answer lives in a table on page 47 of a quarterly report. The parser, in default mode, dropped the table structure during extraction; the table is in the corpus as a sequence of text fragments with no row/column relationships preserved. The retriever found the fragments; the generator stitched them into a fluent-sounding answer; the answer is wrong.
+
+The internal QA eval did not catch this because the eval, like most early RAG evaluations, had no table-based questions. The team built questions about the text in the documents because text is what they thought of when they thought of "what's in the documents." Tables are 30%+ of the content. They were invisible to the eval.
+
+This is a representative shape for how agentic OCR and RAG intersect in 2026, and it is the shape this chapter walks through. The diagnosis is bad parsing; the consequence is invisible RAG failures; the fix is a combination of better parsing, table-aware chunking, and an evaluation regime that does not lie about what the system is doing.
 
 ## Why bad parsing kills RAG silently
 
-- Retrieval returns plausible-looking chunks. The generator answers from them. The answer is wrong. The system has no way to know.
-- The failure is invisible because RAG's internal metrics (retrieval precision, generation BLEU) all look fine. The metric that breaks (user-facing answer correctness) is rarely measured.
-- The compounding effect: each step in parsing → chunking → embedding → retrieval has a small failure rate. Their product is large.
-
-## The parsing → chunking → embedding → retrieval chain
+The failure mode in the example above is not specific to that team. It is structural in how RAG pipelines compose. Let's walk the chain carefully.
 
 ```{mermaid}
 %%| fig-cap: "How agentic OCR feeds the RAG pipeline"
@@ -29,43 +38,139 @@ flowchart LR
     H --> I[Answer + citation back to B]
 ```
 
-- Each step has compounding failure modes:
-  - **Parsing:** drops tables, misreads numbers, loses structure.
-  - **Chunking:** if it doesn't know about structure, it splits across semantic boundaries.
-  - **Embedding:** embeddings of broken chunks are silently bad.
-  - **Retrieval:** retrieves bad chunks with high confidence.
-  - **Generation:** answers from bad chunks fluently.
-- A failure in any step is invisible to the next.
+Each step has its own failure mode, and the failures compound in a way that is invisible from any single step's metrics:
 
-## How agentic OCR helps RAG, concretely
+- **Parsing** drops tables, misreads numbers, loses structure. The output is text; the text is plausible; nothing screams that something is wrong.
+- **Chunking** — if it does not know about structure — splits across semantic boundaries. A chunk may contain the last sentence of one section and the first sentence of the next, with no signal that they are unrelated. Fixed-window chunking is the dominant pre-2024 approach and is the leading source of this failure.
+- **Embedding** turns broken chunks into vectors. Embedding is robust to small input errors but cannot fix structural breaks; a chunk that is two unrelated half-paragraphs embeds to a meaningless vector. Cosine similarity searches will still match it on surface features.
+- **Retrieval** returns top-k chunks with high similarity scores. The scores are real; the chunks are bad. The retriever has no way to know.
+- **Generation** answers fluently from bad chunks. LLMs are excellent at making plausible-sounding answers out of plausible-sounding inputs. This is the step that makes the failure invisible: a wrong answer with confidence indicators that say everything went fine.
 
-Three load-bearing contributions:
+The compounding effect is the central point. Each step has a small failure rate. Their product is large. A pipeline where each step succeeds 95% of the time has end-to-end success of about 77% — and that is assuming the failures are independent, which they are not. Failures correlated through bad parsing produce much sharper user-visible drops.
 
-- **Structural metadata.** Parser emits heading hierarchy, section labels, page references. Chunker uses these to chunk semantically. The result: a chunk is a section, not a window.
-- **Table awareness.** Tables get chunked as units, with cell relationships preserved (DocTags, HTML tables with rowspan/colspan). Embedding a table cell out of context is much worse than embedding a complete table.
-- **Grounding back to source.** Every chunk carries pointers to source regions. The generator can cite. Compliance audit can verify. Users can verify.
+What makes this silent in metrics: every step's internal metric still looks fine. Retrieval precision (does the retrieved chunk contain text similar to the query?) is high. Generation perplexity is normal. The chunks have valid embeddings. The pipeline has no internal observability that connects the user-facing wrong answer to its upstream cause.
+
+## The three concrete contributions agentic OCR makes to RAG
+
+Agentic OCR (Pattern B or Pattern C from @sec-architecture) helps RAG in three specific ways that classic OCR and single-pass VLMs cannot match. Each one addresses a specific failure in the chain.
+
+### Structural metadata that drives semantic chunking
+
+A Pattern C parser emits a document representation that includes heading hierarchy, section labels, paragraph boundaries, and explicit structural relationships. A downstream chunker can use this to chunk *semantically* — a chunk is a section (or sub-section, or coherent block), not a fixed-window slice of the text stream.
+
+The difference is dramatic. Compare two chunking strategies on a regulatory filing:
+
+- **Fixed-window chunking (no structural metadata).** Chunks of 512 tokens, no respect for section boundaries. A chunk may start in the middle of a definitions section and end in the middle of a procedures section. Retrieval will match on surface features but the chunks themselves are semantically incoherent. Generation will produce answers that mix the two contexts as if they were one document.
+- **Section-aware chunking (with structural metadata).** Chunks are sections or sub-sections, each preserving its heading context. Retrieval matches semantically meaningful units. Generation produces answers grounded in a coherent context. The same document, indexed twice, produces measurably different RAG quality.
+
+Vendors that emit good structural metadata in 2026: Granite-Docling (via the DoclingDocument format), Reducto (their hybrid architecture preserves layout through to the output), LlamaParse Agentic and Agentic Plus (the parser explicitly produces heading hierarchies), Landing AI ADE (with the expanded chunk ontology covering attestations, IDs, logos). Vendors whose default output strips structure: hyperscaler APIs in their default modes, single-pass VLM calls without explicit structure-output prompting.
+
+The integration cost of switching from fixed-window to section-aware chunking is usually low — a few days of engineering once the parser emits the metadata. The quality gain is consistently large for any RAG workload that includes structured documents.
+
+### Table awareness that respects cell relationships
+
+Tables are 30%+ of enterprise document content and produce 80%+ of the silent RAG failures. Treating them well is the single highest-leverage RAG-quality improvement available.
+
+The wrong approach: treat the table as a stream of text. Cell values get concatenated with whitespace into a paragraph. Rows lose their relationship to row headers. The semantic structure is gone. Retrieval may match on cell values, but generation cannot produce a correct answer because the cell-row-column relationships are no longer recoverable from the chunk.
+
+The right approach: parse tables as structured objects (HTML with rowspan/colspan preserved, or a custom JSON representation of the table grid), chunk tables **as atomic units** (do not split a table across chunks), and embed the table with a textual representation that preserves the structure ("Table: Q3 turnaround times by procedure. Cardiology: 4.2 days. Orthopedic: 5.1 days. Oncology: 3.8 days.").
+
+The downstream generation step can read structured table chunks and produce correct answers. The retrieval step can match queries to tables by content. The chain works.
+
+Vendors with good table handling in 2026 (and the public benchmark evidence): Reducto (RD-TableBench leader at ~0.90), LlamaParse Agentic Plus (purpose-built for table-heavy documents like financial filings), Mistral OCR 3 (HTML tables with rowspan/colspan preserved). Open-source: MonkeyOCR v1.5 (SOTA on OmniDocBench v1.5 complex layouts), MinerU 2.5 (strong on scientific tables), PP-StructureV3 (small-model leader on layout-aware extraction).
+
+Test your RAG on table-answer questions specifically. If you have not, the team in the bank example above is your team. The fix is not always switching parsers; sometimes it is using your existing parser's table-aware mode that you did not turn on, or adding a table-specific extractor in front of the existing pipeline. Diagnose first.
+
+### Grounding that makes citations real
+
+Pattern B and Pattern C parsers emit grounded outputs — every extracted field carries pointers to the source region (page number, bounding box). The RAG pipeline can preserve these pointers through chunking, embedding, retrieval, and generation, so that the final answer can cite the specific source region where each fact came from.
+
+The user-facing impact is large. A RAG system that produces an answer with a "click to see source" link to the highlighted region in the original PDF is qualitatively different from one that produces an answer with a citation that says "from the company handbook." Users trust the first; they correctly mistrust the second.
+
+The compliance impact is larger. For regulated workloads (healthcare, legal, finance), the auditor's question is "where did this answer come from?" A grounded RAG system can answer the question deterministically. An ungrounded one cannot.
+
+The technical implementation: each chunk inherits the source-region pointers from its parsed source. The vector store stores chunk + pointer. The retriever returns chunk + pointer. The generator's prompt includes the source pointers and is instructed to cite them. The UI renders the answer with clickable citations.
+
+This is standard 2026 RAG engineering, but it requires the parser to emit groundings in the first place. Most public vendors do; some open-source models do (Chandra, dots.ocr, OlmOCR-2 all support grounding outputs); the hyperscaler defaults often do not without explicit configuration. Verify in eval that grounding metadata flows through your specific pipeline; do not assume.
 
 ## Contextual drift, and how good parsing fixes it
 
-- Contextual drift: information that's correct in context becomes wrong when retrieved out of context. A footnote that says "amounts in thousands" becomes invisible when the table row is retrieved alone.
-- Bad parsing strips context. Good parsing preserves it via structural metadata.
-- The pattern: emit chunks that **always include their parent context** — section heading, footnote scope, units of measurement.
+A subtler failure mode that bad parsing introduces is **contextual drift**. Information that is correct in context becomes wrong when retrieved out of context.
+
+A canonical example: a financial table includes a footnote that says "all amounts in thousands." The table itself shows "Revenue: 124,500." In context, this means $124.5 million. When the table row is retrieved without the footnote, the chunk shows "Revenue: 124,500" — which a generator will, plausibly and confidently, interpret as $124,500. The answer is off by three orders of magnitude. The retrieval was successful; the chunk was technically correct; the user got the wrong number.
+
+Other examples: a "patient" mentioned in a clinical note may be ambiguous if the document has multiple patients and the chunk does not include the patient identifier. A "Q3" reference is ambiguous without the fiscal year context. A regulatory citation may be qualified by jurisdiction in a heading that the chunk does not include.
+
+The general pattern: **chunks need to carry their parent context**. Structural metadata makes this possible — the chunker can attach heading context, footnote scope, units of measurement, and other implicit qualifiers as chunk-level metadata. Generation prompts can be instructed to use this metadata. Retrieval can index on it.
+
+Vendors and open-source projects that handle this well in 2026 expose explicit "context" fields alongside chunks (Docling, LlamaParse with chunking enabled, Granite-Docling via DoclingDocument). Teams that do not get this right reproduce the contextual drift problem at scale and discover it through user complaints about wrong-by-orders-of-magnitude answers.
 
 ## Reference patterns
 
-- **Section-aware chunking:** chunks are sections (or sub-sections), not fixed-window slices.
-- **Table-preserving chunking:** tables are atomic chunks. Don't split.
-- **Hierarchical retrieval:** retrieve at the section level first, then at the chunk level within retrieved sections.
-- **Grounded answer with citations:** the generator returns the answer plus the chunk IDs it used; the UI shows the source region.
+The 2026 reference patterns for agentic OCR + RAG, in increasing order of sophistication:
+
+**Section-aware chunking.** Chunks are sections, not fixed windows. Each chunk preserves its heading hierarchy as metadata. Generation includes the heading context in the prompt.
+
+**Table-preserving chunking.** Tables are atomic chunks. Each table chunk includes a textual description of its structure ("Table titled X with columns A, B, C; N rows of data follow."). Retrieval matches table chunks on content; generation can read the structured representation.
+
+**Hierarchical retrieval.** Retrieve at the section level first, then at the chunk level within retrieved sections. This produces more coherent generation context than flat top-k retrieval, especially for multi-step queries.
+
+**Grounded answer with citations.** Every generated answer includes source-region pointers that the UI can render as clickable citations. The compliance audit trail is automatic.
+
+**Context-augmented chunks.** Chunks carry their parent context — heading hierarchy, footnote scope, units, named entities — as metadata available to both retrieval and generation. Contextual drift is addressed structurally rather than left to chance.
+
+Most production RAG systems in 2026 implement two or three of these patterns. The systems that implement all five produce qualitatively better answers and qualitatively better audit trails. The cost is modest — most of this is chunking-and-retrieval engineering on top of a parser that emits the right metadata; the parser itself is the main investment.
 
 ## When OCR is NOT your RAG bottleneck
 
-- If your documents are clean, structured native PDFs or HTML, the bottleneck is probably retrieval, not parsing. **Diagnose before you upgrade.**
-- Cheap diagnostic: take 50 user queries, hand-trace the chain. Where did each failure originate? If <30% are parsing failures, parsing isn't your bottleneck.
-- Investing in agentic OCR when your bottleneck is retrieval is a $100k–$500k mistake (per the DABstep result — extraction can be perfect and answers can still be wrong).
+A specific warning, because the failure mode is expensive: **agentic OCR is not always the right fix for a struggling RAG system**.
 
-## Named takes
+The most common shape of the wrong diagnosis: a RAG system is producing poor answers; the team assumes the parsing layer is the problem; they upgrade from a hyperscaler API to a premium agentic-OCR vendor; the per-page cost goes up by 8–10×; the answer quality does not noticeably improve. In retrospect, the bottleneck was retrieval, or embedding, or the generation prompt — and the parsing investment did not address it.
 
-> *"RAG eval that doesn't include questions whose answer requires a table is RAG eval that lies. Tables are 30%+ of enterprise document content and 80%+ of the parsing errors."*
+The diagnostic is straightforward and worth running before any parser upgrade:
 
-> *"'Better OCR will fix our RAG' is sometimes true and sometimes a $500k mistake. Run the ablation first."*
+**Step 1: Sample 50 user queries that produced wrong answers.** Real queries from real users, not synthetic test queries.
+
+**Step 2: For each, hand-trace the chain.** Where did the failure originate?
+- Did the parser produce a faithful representation of the source document? *(If no → parsing failure.)*
+- Did the chunker produce semantically coherent chunks? *(If no → chunking failure.)*
+- Did the retriever return chunks that contained the answer? *(If no → retrieval failure.)*
+- Did the generator produce a correct answer from the retrieved chunks? *(If no → generation failure.)*
+
+**Step 3: Categorize the failures.** If parsing failures are under 30% of the total, parsing is not your bottleneck. Upgrading parsing will not meaningfully improve the system. If parsing failures are over 60%, parsing is the bottleneck and the agentic-OCR upgrade is likely to help. The 30–60% range is mixed — fix both parsing and the dominant other failure mode.
+
+The cheap diagnostic — a few hours of hand-tracing — saves significant amounts of money on premature parser upgrades. The DABstep result is the canonical reminder: extraction is not reasoning, and a 14.55% ceiling on multi-step reasoning over correctly-extracted data tells you that *reasoning failures look like parsing failures from the outside*. A team that upgrades parsing in response to a downstream-reasoning bottleneck will spend $100k–$500k and not move the needle.
+
+## RAG-specific evaluation
+
+Building on Chapter 11's general evaluation discipline, a few RAG-specific additions:
+
+**Question coverage.** Your RAG eval needs questions whose answers live in tables, in footnotes, in section-level context (where a heading qualifies the answer), and in cross-document references. Most RAG evals built in 2024–2025 omit the first three categories entirely.
+
+**Citation accuracy.** Not just "did the answer cite a source," but "did the cited source contain the answer." Score citation accuracy separately from answer accuracy. A system with 90% answer accuracy and 60% citation accuracy is dangerous for compliance work — the citations are wrong even when the answers are right.
+
+**Hallucination rate on missing-answer queries.** Include queries whose answers are not in the corpus. A well-behaved RAG system answers "I don't have that information" when the corpus does not contain the answer. A poorly-behaved system hallucinates plausibly. Measure the hallucination rate on missing-answer queries explicitly.
+
+**Latency under load.** RAG latency is the sum of parsing (typically offline), retrieval, and generation. Production load can change the latency profile significantly. Test under realistic concurrent-query loads, not just single-query latency.
+
+## What good RAG-with-agentic-OCR looks like
+
+A healthy 2026 RAG-with-agentic-OCR deployment exhibits these properties:
+
+- Section-aware chunking driven by structural metadata from the parser.
+- Tables chunked as atomic units with structural representations.
+- Grounded outputs flowing through to citations in the user-facing UI.
+- Hierarchical retrieval that respects section structure.
+- Context-augmented chunks that address contextual drift.
+- RAG eval that includes table-, footnote-, and context-dependent questions.
+- Citation accuracy and hallucination rate measured as separate metrics from answer accuracy.
+
+No system achieves all seven on day one. Teams that work toward them iteratively, with eval that catches each category of failure as the pipeline matures, produce RAG systems that meaningfully outperform the 2024-era fixed-window-chunking baselines. Teams that treat "upgrade the parser" as the entire answer reproduce the bank's 41% production-failure scenario from the opening of this chapter, just with a more expensive parser.
+
+::: {.callout-tip title="Named takes" appearance="simple"}
+*RAG eval that doesn't include questions whose answer requires a table is RAG eval that lies. Tables are 30%+ of enterprise document content and 80%+ of the parsing errors.*
+
+*"Better OCR will fix our RAG" is sometimes true and sometimes a $500k mistake. Run the ablation first.*
+
+*Grounding turns RAG citations from theater into audit infrastructure. For compliance workloads, this is the difference between a deployable system and a non-deployable one.*
+:::

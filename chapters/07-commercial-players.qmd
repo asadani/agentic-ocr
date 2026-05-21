@@ -1,108 +1,141 @@
 # Commercial Players {#sec-commercial-players}
 
 ::: {.callout-note title="Executive summary" appearance="simple"}
-- *(Phase C)*
+- The commercial landscape divides into four tiers in 2026: **AI-native specialists** (LlamaParse, Reducto, Landing AI ADE, Mistral Document AI), **hyperscaler APIs** (Google Document AI, AWS Textract, Azure Document Intelligence), **classic IDP retrofitted** (ABBYY, Hyperscience, UiPath, Klippa, Rossum) and AI-native commercial IDP (Nanonets, Docsumo), and the newer **platform-integrated** tier (Databricks Document Intelligence).
+- AI-native specialists lead on benchmark scores and pricing flexibility; hyperscaler APIs lead on procurement maturity and broad compliance certification; classic IDP leads on HITL and audit posture; the platform tier is a new strategic shape that makes the shift-left thesis institutionally credible.
+- The right vendor is rarely the one with the highest benchmark score. The right vendor is the one that minimizes your cost-per-correct-extraction-with-provenance on **your** documents, evaluated against **your** golden set.
+- Pricing across the tiers spans roughly two orders of magnitude per page. The cheapest credible parser (Mistral OCR 3 Batch at $0.001/page) and the most expensive tier of premium agentic systems (LlamaParse Agentic Plus at $0.056/page; LandingAI ADE Visionary tier) bracket the cost question.
 :::
 
-::: {.callout-tip title="Drafter guidance" appearance="minimal"}
-Target ~5,500 words. See `research/00-book-outline.md` Chapter 7. Open with the three-tier framing — the chapter's organizing principle.
-:::
+## How to read this chapter
 
-## The three tiers
+This chapter is not a buyer's guide that recommends a vendor. It is a map. Buyers' guides date badly in this category — every quarter at least one vendor releases a major update that changes the ranking — and the goal here is to give you a stable mental model that survives the next twelve months of releases. The vendor names will move. The categories should hold.
 
-- **AI-native specialists** — LlamaParse, Reducto, Landing AI ADE, Mistral Document AI. Leading on benchmarks, flexible pricing, less procurement maturity.
-- **Hyperscaler APIs** — Google Document AI, AWS Textract, Azure Document Intelligence. Mature, broad-compliance-ready, architecturally template-leaning, lagging the agentic frontier on tables.
-- **Classic IDP retrofitted** — ABBYY, Hyperscience, UiPath, Klippa, Rossum, Docsumo, Nanonets. Strong HITL, strong compliance, weak agentic story (with exceptions).
-- **The new fourth tier** — platform-integrated agentic OCR (Databricks Document Intelligence). Not a pure-play vendor but increasingly relevant for enterprises already on those platforms.
+Three angles for reading the chapter. If you are a procurement-led reader, focus on the pricing matrix and the per-vendor cost notes. If you are an architecture-led reader, focus on each vendor's pattern (A, B, or C from @sec-architecture) and what they have engineered well around the model layer. If you are a strategy-led reader, focus on the tier structure — the move from "buy a vendor" to "buy a platform" is the strategic shift this chapter is really about.
+
+## The four tiers
+
+The 2026 commercial landscape resolves into four tiers, each with characteristic strengths, characteristic blind spots, and characteristic pricing.
+
+**AI-native specialists.** Companies founded specifically to do agentic OCR. LlamaParse (part of LlamaIndex), Reducto, Landing AI's ADE product, Mistral Document AI. These vendors lead the public benchmarks, ship the most aggressive product cadences, and have the most flexible pricing — but their procurement processes are less mature, and their classic-enterprise compliance certifications often lag the hyperscalers and the classic IDP vendors. Most of them are series-A through series-C startups in 2026; some will not survive consolidation.
+
+**Hyperscaler APIs.** Google Document AI, AWS Textract, Azure Document Intelligence. Mature, broadly compliance-certified, integrated with the rest of the buyer's cloud stack. Architecturally template-leaning and lagging the agentic frontier on adversarial workloads (especially tables) by a measurable margin. The default pick for buyers who care more about procurement risk than benchmark score, which is a larger fraction of the market than the AI-native specialists like to admit.
+
+**Classic IDP, retrofitted.** ABBYY, Hyperscience, UiPath Document Understanding, Klippa, Rossum, plus the newer AI-native commercial IDP entrants Nanonets and Docsumo. Strongest HITL infrastructure of any tier; strongest compliance posture (SOC 2, HIPAA, GDPR built into the core product, not retrofitted at sales time); weakest agentic story in the strict five-attribute sense, with notable exceptions. The right tier if HITL is the load-bearing requirement and the agentic loop is secondary.
+
+**Platform-integrated agentic OCR.** Databricks Document Intelligence is the canonical 2026 example. Not a pure-play OCR vendor; an integrated set of AI functions inside a larger data platform. The strategic significance is bigger than its current market share: a hyperscaler-adjacent platform saying that document reading is the gating constraint on agent quality is air cover for the shift-left thesis (Chapter 6) at the institutional level. Snowflake, Microsoft Fabric, and the major LLM-platform vendors are all building or buying into this tier.
 
 ## AI-native specialists
 
 ### LlamaParse (LlamaIndex)
 
-- Four tiers: Fast (1 credit/page), Cost-Effective (3), Agentic (10), Agentic Plus (45). 1,000 credits = $1.25. 10k free credits/month.
-- Effective per-page: $0.00125 → $0.05625.
-- Top of ParseBench: **LlamaParse Agentic at 84.9% overall, ~$0.012/page.**
-- Strong on: messy enterprise documents, financial filings, scientific papers.
-- Caveat: vendor-published benchmark; expect rule-selection bias.
+LlamaParse is the front-runner on the most-cited 2026 benchmark, ParseBench, with their Agentic tier scoring 84.9% overall at approximately $0.012 per page [@parsebench2026]. The product offers four tiers — Fast (1 credit/page), Cost-Effective (3), Agentic (10), and Agentic Plus (45) — at a conversion rate of 1,000 credits to $1.25 and 10,000 free credits per month for new accounts.
+
+Architecturally LlamaParse runs Pattern B (agentic loop with reflection) at the Agentic and Agentic Plus tiers, and something closer to Pattern A with light validation at the Fast and Cost-Effective tiers. Strengths: messy enterprise documents, financial filings, scientific papers, and integration with the rest of the LlamaIndex ecosystem (which is itself winning meaningful market share in the agent-orchestration layer). Weaknesses: the system is at its best on text-heavy documents and lags Pattern C specialists on adversarial tables; pricing at the top tier is among the highest in the AI-native category.
+
+The honest framing: LlamaParse is the right pick when you want a single vendor for parsing-plus-orchestration, when your downstream system is built on or compatible with LlamaIndex, and when your documents are text-heavy enough that the Agentic tier (not Agentic Plus) is sufficient. Caveat the ParseBench number with the usual vendor-published warning — the benchmark is LlamaIndex-maintained, and the rule selection inevitably shapes the leaderboard.
 
 ### Reducto
 
-- Hybrid CV + VLM architecture. Multi-pass agentic OCR explicitly marketed.
-- Top of RD-TableBench (their own benchmark) at ~0.90 similarity. ~20pp ahead of hyperscalers on tables.
-- Strong on: complex tables, scanned PDFs, handwritten content.
-- Caveat: RD-TableBench is vendor-published. Cross-validate on independent benchmarks.
+Reducto is the Pattern C standard-bearer in the commercial landscape. Their hybrid CV-plus-VLM architecture is the most explicit implementation of "specialization beats generality" in the commercial category, and their result on RD-TableBench (~0.90 cell-alignment similarity, ~20 percentage points ahead of the hyperscaler APIs) is the cleanest data point [@rdtablebench].
+
+Strengths: complex tables, scanned PDFs with mixed content, handwritten regions, and any workload where layout matters more than text fluency. Their published work on multi-pass agentic OCR [@reductoagenticocr] is the most technically detailed public account from any commercial vendor in 2026 — worth reading regardless of whether you intend to buy.
+
+Pricing runs $0.005–$0.020 per page. SOC 2 and HIPAA available. The honest caveat: RD-TableBench is Reducto-published. Their lead on it is real, but you should cross-validate on a non-Reducto benchmark before signing — OmniDocBench or your own golden set are both useful.
 
 ### Landing AI — Agentic Document Extraction (ADE)
 
-- Credit-based monthly subscriptions: $39/mo for 120k credits → $2,199/mo for 900k pages.
-- Credit formula: `credits = ceil((input_chars/5000) + (output_chars/1000), 0.1)`.
-- HIPAA + ZDR (Zero Data Retention) on Team/Enterprise plans.
-- Strong on: regulated industries, structured ontology coverage (IDs, barcodes, attestations).
-- New features (2025–2026): agentic table captioning, RBAC, expanded chunk ontology.
+ADE moved to credit-based monthly subscriptions in 2025–2026, ranging from $39/month for 120,000 credits up to $2,199/month for 900,000 pages [@landingade2026]. The credit formula — `ceil((input_chars/5,000) + (output_chars/1,000), 0.1)` — makes the actual per-page cost dependent on document size, which is honest if confusing.
+
+ADE's 2026 feature set is the most ontology-rich among the AI-native specialists. The product can identify attestations, ID cards, logos, barcodes, and QR codes as first-class entities — not just as "image regions" that downstream code has to interpret. Agentic table captioning, RBAC, HIPAA on Team and Enterprise plans, and one-click Zero Data Retention put ADE in a strong position for regulated workloads.
+
+ADE is the right pick when ontology richness matters (insurance underwriting packets, healthcare records, KYC document review), when HIPAA or ZDR are non-negotiable, and when the documents have a complex enough structure that the broad entity classification pays off. It is not the cheapest tier, and the credit formula needs a few sample runs against your real documents to predict monthly cost confidently.
 
 ### Mistral Document AI (OCR 3)
 
-- Model id `mistral-ocr-2512`. **$2 per 1,000 pages standard; $1 per 1,000 pages via Batch API.**
-- Throughput: 2,000 pages/min per node.
-- Self-host option — relevant for HIPAA and EU data-sovereignty workloads.
-- Strong on: cost; speed; forms and handwriting (74% win rate vs. OCR 2).
-- The price floor for "agentic-grade" parsing in 2026.
+Mistral OCR 3 sits at the price floor of credible agentic-grade parsing: **$2 per 1,000 pages** standard, **$1 per 1,000 pages** via Batch API, with throughput of up to 2,000 pages/minute per node [@mistralocr3]. The model identifier `mistral-ocr-2512` is callable via API, and self-hosted deployment is available for organizations with strict data-sovereignty requirements.
+
+The internal reported metric is a 74% win rate over Mistral OCR 2 across a customer-document workflow set, particularly strong on forms, handwritten content, and table-heavy documents. Output is Markdown, with tables reconstructed using HTML tags including `rowspan` and `colspan` — usable for downstream chunking and embedding without further parsing.
+
+OCR 3 is the right pick when cost-per-page is the binding constraint, when throughput requirements push the hyperscalers' price-tier into the same range as a specialist, and when self-hosting is required for compliance reasons that exclude the SaaS-only specialists. Architecturally it is closer to Pattern B than to Pattern C — the agentic loop is real but the specialized-tool routing is less elaborate than what Reducto offers.
 
 ## Hyperscaler APIs
 
-### Google Document AI
+The three hyperscaler OCR APIs — Google Document AI, AWS Textract, Azure Document Intelligence — are mature, integrated, and lagging the agentic frontier in measurable ways.
 
-- Form Parser, Custom Document Classifier, etc. Mature; template-leaning.
-- Per-page: $0.015–$0.065 depending on processor.
-- Strong on: integration with GCP, broad compliance.
-- Weak on: agentic loop, tables vs. specialists.
+**Google Document AI.** Per-page $0.015–$0.065 depending on processor (Form Parser, Contract Parser, Lending DocAI, custom). Strong integration with the rest of GCP, broad compliance certifications, mature SDK. Architecturally template-leaning — the product line grew out of pre-VLM document AI and reflects that legacy. The agentic story is being added, but lags the specialist vendors by roughly twelve to eighteen months in feature depth.
 
-### AWS Textract
+**AWS Textract.** Per-page $0.0015 (basic OCR) to $0.065 (AnalyzeDocument with Queries). The basic tier is the cheapest credible parsing in the commercial landscape; the advanced tiers are competitive on price but still architecturally template-leaning. The integration with Amazon Augmented AI (A2I) for HITL is mature and well-engineered. Like Document AI, the agentic story is in active development.
 
-- Per-page: $0.0015 (basic) to $0.065 (Queries/AnalyzeDocument).
-- Strong on: scale, A2I integration for HITL.
-- Weak on: agentic feature set, tables vs. Reducto.
+**Azure Document Intelligence.** Per-page $0.0015–$0.050. The custom-model story is the strongest of the three hyperscalers — Azure has invested deeply in letting customers fine-tune extraction models for their specific document types, which is genuinely valuable for narrow workloads. Compliance certifications and Microsoft 365 integration round out the offering.
 
-### Azure Document Intelligence
+The honest framing of the hyperscaler tier: these are the right pick for buyers whose procurement processes require an established cloud-vendor relationship, whose compliance requirements rule out smaller vendors, and whose documents are within the hyperscalers' design space (forms, invoices, contracts in clean digital format). They are not the right pick for adversarial agentic workloads — the Reducto vs. hyperscaler gap on RD-TableBench is roughly twenty percentage points, and that gap shows up directly in your error rate on real documents.
 
-- Per-page: $0.0015–$0.050. Custom models supported.
-- Strong on: custom models for narrow domains; Microsoft integration.
-- Weak on: agentic positioning; OOTB workflows.
+A particular failure mode worth naming: teams that pick a hyperscaler because "the procurement is easier" and then discover six months later that the documents they actually want to process are in the gap between what the hyperscaler does well and what the workload requires. The savings on procurement are real; the costs of the wrong architecture are larger. Run the cross-validation on your golden set before committing.
 
 ## Classic IDP, retrofitted
 
-### ABBYY Vantage, Hyperscience, UiPath, Klippa, Rossum
+The classic IDP vendors — ABBYY Vantage, Hyperscience, UiPath Document Understanding, Klippa, Rossum — have been incumbents in this space for fifteen to twenty years. Their strengths and weaknesses are inverted relative to the AI-native specialists.
 
-- Strong compliance posture (SOC2/HIPAA/GDPR).
-- HITL is native, not bolted on.
-- Per-page: $0.020–$0.150 (Hyperscience at the high end).
-- Weak on: agentic story is largely retrofitted. The model layer is being upgraded; the surrounding architecture is older.
+Strengths: **HITL is native, not retrofitted**. The reviewer queue, the reviewer UI, the case-management workflow, the audit trail — these have been the core product for two decades. The agentic specialists are now building this functionality and discovering it is harder than it looks. Compliance posture is similarly mature: ABBYY, Hyperscience, and UiPath all carry the full enterprise compliance certification suite as a default rather than a sales-time question.
 
-### Nanonets and Docsumo (newer "AI-native commercial IDP")
+Weaknesses: **the agentic story is largely retrofitted**. The model layer at these vendors is being upgraded to include VLMs and reflection loops, but the surrounding architecture was designed for a different world. The "agentic" features in classic IDP vendor pitches in 2026 frequently fail the five-attribute test from Chapter 3 — typically missing tool-using and goal-driven attributes, or having only weak versions of self-correction.
 
-- **Nanonets:** workflow-block pricing ($0.30/complex AI block, <$2/invoice end-to-end), 100+ languages, claims 34% of Fortune 500.
-- **Docsumo:** 150+ document types, claims 95%+ accuracy. Tiered subscriptions; aggressive on agentic positioning in marketing.
-- Both are stronger on agentic features than ABBYY-tier IDP, weaker on raw benchmark scores than AI-native specialists.
+Per-page pricing in this tier runs $0.020–$0.150, with Hyperscience at the high end of the range. The pricing reflects what classic IDP has always been about: HITL infrastructure and compliance, with parsing as one component rather than the whole product.
 
-## Databricks Document Intelligence (the platform tier)
+A separate sub-tier worth calling out is the AI-native commercial IDP entrants: **Nanonets** and **Docsumo**. These vendors are younger than the classic IDP incumbents and are explicitly marketing agentic capabilities. Nanonets prices in workflow blocks ($0.30 per complex AI block, leading to under-$2-per-invoice end-to-end pricing), supports 100+ languages, and reports 34% of Fortune 500 as customers (vendor claim; treat accordingly). Docsumo claims 150+ document types out of the box at 95%+ accuracy, with a free 14-day / 1,000-page trial and tiered subscriptions thereafter.
 
-- `ai_parse_document` (GA), `ai_classify`, `ai_extract` as chainable AI functions.
-- Tightly integrated with Lakeflow, Unity Catalog, Agent Bricks.
-- Claims: **5–7× cheaper than VLM-only pipelines** for equivalent accuracy; one customer (Loopback Analytics) reports ~90% cost reduction on clinical-note extraction.
-- The strategic significance: a data platform vendor saying out loud that **document reading is the gating constraint on agent quality**. That's air cover for the shift-left thesis.
+The honest framing of this tier: choose classic IDP or AI-native commercial IDP when HITL is the load-bearing requirement, when the documents are within the classic-IDP design envelope (invoices, claims forms, KYC, contract abstraction), and when your procurement process is more comfortable with established vendor relationships than with the AI-native startup risk. Do not choose this tier expecting the agentic capabilities to match the specialist vendors at the same price point.
+
+## Databricks Document Intelligence — the platform tier
+
+Databricks launched Document Intelligence in 2026 as a set of chainable SQL/AI functions: `ai_parse_document` (generally available), `ai_classify`, and `ai_extract` [@databricks2026documentintelligence]. The integration with Lakeflow, Unity Catalog, and Agent Bricks is tight enough that the product is best understood not as an OCR API but as a primitive in the Databricks data platform.
+
+The publicly reported numbers are aggressive. **5–7× lower cost than comparable VLM-only pipelines** for equivalent accuracy. A customer case study (Loopback Analytics, clinical-note extraction) reports approximately **90% cost reduction** for the same downstream entity-extraction outcome. The 16% across-the-board performance gain from inserting `ai_parse_document` upstream of agent frameworks (Chapter 6) is the cleanest single piece of evidence for the shift-left thesis in any 2026 publication.
+
+The strategic significance is larger than the product. A platform vendor at Databricks' scale saying — with public benchmarks and customer case studies — that document reading is the gating constraint on agent quality is a meaningful institutional endorsement of the shift-left thesis. The other major data platforms (Snowflake, Microsoft Fabric, the LLM-platform vendors building their own) are reading the same signal and building toward the same tier.
+
+The honest caveats are familiar: vendor-published numbers, OfficeQA is a new benchmark that Databricks maintains, the architecture is platform-locked (the product is meaningfully useful only if you are already on Databricks). For Databricks customers, it is the easiest agentic-OCR path imaginable. For non-Databricks customers, it is a data point about where the institutional landscape is heading, not an option you can buy.
 
 ## Pricing matrix
 
-*(Render from `data/commercial-players.csv` in Phase C. Add a column for "best at" — what each vendor wins on.)*
+The data in `data/commercial-players.csv` and the per-vendor cost notes above resolve into the following compact summary:
+
+| Tier | Vendor | Per-page low | Per-page high |
+|---|---|---|---|
+| AI-native | LlamaParse | $0.00125 | $0.05625 |
+| AI-native | Reducto | $0.005 | $0.020 |
+| AI-native | Landing AI ADE (monthly) | $39/mo | $2,199/mo |
+| AI-native | Mistral Document AI | $0.001 | $0.002 |
+| AI-native commercial IDP | Nanonets | $0.05/block | $0.30/block |
+| AI-native commercial IDP | Docsumo | (subscription) | (subscription) |
+| Hyperscaler | Google Document AI | $0.015 | $0.065 |
+| Hyperscaler | AWS Textract | $0.0015 | $0.065 |
+| Hyperscaler | Azure DI | $0.0015 | $0.050 |
+| Classic IDP | ABBYY Vantage | $0.020 | $0.100 |
+| Classic IDP | Hyperscience | $0.030 | $0.150 |
+| Classic IDP | UiPath DU | $0.020 | $0.080 |
+| Classic IDP | Klippa | $0.010 | $0.040 |
+| Classic IDP | Rossum | $0.020 | $0.080 |
+| Platform | Databricks Document Intelligence | (platform-tier) | (platform-tier) |
+
+Two orders of magnitude separate the floor and the ceiling. The salient point is not which vendor is cheapest; the salient point is that **pricing differences across vendors look big until you remember that error rate is the multiplier**. A vendor that is four times cheaper per page and has four times the field-level error rate is, on cost-per-correct-extraction, identical to the more expensive vendor. The pricing matrix is only meaningful when paired with the error-rate column, and the error-rate column only becomes meaningful when you measure it on your own documents.
 
 ## How to read this landscape
 
-- Benchmark rank is not procurement rank. The vendors winning the leaderboards are often the youngest, with the thinnest enterprise-readiness story.
-- The right question is "which vendor minimizes my cost-per-correct-extraction-with-provenance," not "which vendor scored highest on ParseBench."
-- Procurement tip: shortlist three vendors across the three tiers (one AI-native, one hyperscaler, one classic IDP). Run all three on your golden set. Decide on data, not demos.
+The chapter's organizing principle, restated as actionable advice:
 
-## Named takes
+- **Do not pick by benchmark rank.** Benchmark leaders frequently produce worse production results than benchmark followers on specific workloads. The benchmark is a filter, not a ranking.
+- **Shortlist three vendors across three tiers** — one AI-native, one hyperscaler or classic IDP, one Pattern C specialist if your workload is high-stakes. Run all three on your golden set. Decide on data, not demos.
+- **The right vendor is the one that minimizes cost-per-correct-extraction-with-provenance on your documents.** This is a measured number, not a marketing number. The only honest way to get it is to run the parsing on a representative sample of your real workload.
+- **Procurement maturity matters more than buyers' guides admit.** A vendor with the right benchmark score but with a six-month security-review timeline can lose to a vendor with a lower benchmark score but a two-week procurement path, simply because the higher-benchmark vendor's project does not ship within the fiscal-year window. Factor this in honestly.
 
-> *"The hyperscaler APIs are still where most enterprise procurement lands, and they are still the wrong choice for 2026 agentic workloads. They were designed for templates."*
+The chapters that follow build on the same picture. @sec-opensource-players covers the open-source side of the landscape, which has caught up on parsing quality more than the commercial vendors will acknowledge. @sec-vendor-selection turns the landscape into a decision framework, including the explicit "should I not build this at all" rubric from @sec-dont-build. @sec-evaluating-pipeline gives you the eval methodology you need to make the vendor-selection numbers honest.
 
-> *"Pricing differences across vendors look big until you remember that error rate is the multiplier. A 4× cheaper parser with a 4× higher field-error rate is the same cost-per-correct-extraction."*
+::: {.callout-tip title="Named takes" appearance="simple"}
+*The hyperscaler APIs are still where most enterprise procurement lands, and they are still the wrong choice for 2026 agentic workloads. They were designed for templates.*
+
+*Pricing differences across vendors look big until you remember that error rate is the multiplier. A 4× cheaper parser with a 4× higher field-error rate is the same cost-per-correct-extraction.*
+
+*The platform tier (Databricks today; Snowflake and Fabric next) is the most important strategic shift in 2026 commercial agentic OCR. The pure-play specialists are not wrong to be nervous.*
+:::

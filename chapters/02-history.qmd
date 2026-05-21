@@ -1,37 +1,70 @@
 # A Short History of Document Processing {#sec-history}
 
 ::: {.callout-note title="Executive summary" appearance="simple"}
-- *(Phase C)*
-:::
-
-::: {.callout-tip title="Drafter guidance" appearance="minimal"}
-Target ~3,000 words. See `research/00-book-outline.md` Chapter 2 for the beat sheet. Four-era structure; each era ends with a clean handoff to the next.
+- Document processing has gone through four distinct eras: classic OCR (1990s–2010s), template-driven IDP (2010s), single-pass VLMs (2022–2024), and agentic loops (2024–present). Each generation eliminated the previous generation's most expensive engineering — and replaced it with a new expensive engineering category.
+- The reason agentic OCR works *now* is not that the underlying models suddenly got better. The models have been steadily improving for years. The change is that the *surrounding scaffolding* — tool use, schema validation, grounding, HITL queues, evaluation infrastructure — finally got good enough to wrap around the models in production.
+- Anyone selling you the story that agentic OCR makes the engineering disappear is selling you a screenshot of the demo. The engineering moves; it does not vanish.
 :::
 
 ## The classic OCR era (1990s–2010s)
 
-- Tesseract's 2005 open-sourcing as the inflection point. The assumption baked in: text is a stream of characters in a known layout.
-- The cottage industry of layout-detection libraries, denoising, deskewing, and language-specific tuning that grew around character recognition.
-- Why classic OCR plateaued: enterprise documents are not streams of characters. They are nested structures with semantic dependencies between regions.
+Tesseract was open-sourced by Google in 2005 [@tesseractgoogle2005]. By that point its underlying work was already nearly a decade old, developed at HP Labs starting in the mid-1980s. The release matters because it codified an assumption that would shape the next fifteen years of enterprise document processing:
+
+> *Text on a page is a stream of characters in a known layout.*
+
+Every architectural decision in the classic OCR era is downstream of that assumption. You feed an image to the system. The system returns text. Maybe — if you are lucky and the vendor is good — bounding boxes for each word. The layout has to be discovered or imposed by something *else*: a layout-analysis library, a deskewing pass, a language-specific tuning step, a forms-recognition module bolted on top. Each of those somethings was a cottage industry. ABBYY built one of the most successful businesses of the 2000s on the strength of its layout-analysis pipeline alone.
+
+What the classic OCR era got right was the engineering culture. Pipelines were modular. Each stage had clear inputs and outputs. You could measure character-level accuracy on a fixed test set and improve it. Tesseract on clean printed English crossed 99% character accuracy by the early 2010s, and that number is real — it is also, in retrospect, almost completely useless for what enterprises actually wanted to do.
+
+What the classic OCR era got wrong, eventually, is that **enterprise documents are not streams of characters in known layouts**. They are nested structures — invoices with line items, contracts with clauses, claims forms with attached supporting documents, medical records with handwritten margin notes — and the relationships between regions of the page carry as much information as the characters do. A 99% character-accurate Tesseract output of an invoice is useless if you cannot tell which line items belong to which header, or which total goes with which subtotal. The character was the wrong unit of analysis.
+
+By the late 2010s, every team that took document processing seriously had built (or bought) a layer of structural logic on top of OCR. The teams that did this well became IDP vendors. The teams that did it poorly built fragile internal tooling that broke every time a vendor changed an invoice format.
 
 ## ICR and template-driven IDP (2010s)
 
-- ICR (intelligent character recognition) — handwriting and printed-form fields. Templates as the dominant pattern: vendor maps known fields to known regions.
-- ABBYY, Hyperscience, and the early IDP era — strong on invoices, brittle on variation.
-- Why templates collapsed in production: every new vendor adds a new template; every layout change breaks every template. The cost is in maintenance, not initial accuracy.
+The 2010s answer to "OCR alone is not enough" was **intelligent character recognition** (ICR) and **template-driven intelligent document processing** (IDP).
+
+ICR was the modest version of the answer: extend OCR to handle handwriting and printed-form fields. Forms have known field locations; if you train a model on enough variants of a known form, you can read the values out reliably. This worked extremely well for narrow domains — bank deposit slips, insurance claims forms, government tax returns — where the form was standardized and high-volume.
+
+Template-driven IDP was the ambitious version. The idea: for each document type you cared about, build a template that mapped known fields to known regions of the page. Run OCR underneath; apply the template to the OCR output; pull out the structured fields. ABBYY Vantage [@abbyyvantage], Hyperscience [@hyperscience], Kofax (later UiPath Document Understanding), and a half-dozen other vendors built businesses on this pattern through the 2010s.
+
+The template-driven approach has two virtues that should not be underestimated. The first is that **on a known document type, accuracy can be excellent** — well into the high 90s for fields that are reliably present. The second is that **the system is auditable**. You can point at the template, point at the OCR output, and explain exactly why the extractor produced the value it did. For regulated industries — banks, insurers, government — that auditability is a feature, not an afterthought.
+
+The fatal weakness was operational. Every new vendor adds a new template. Every layout change breaks every template. The cost is not in initial accuracy; it is in maintenance. A bank deploying template-driven IDP for invoice processing might support fifty vendors at launch and find itself, two years later, maintaining six hundred templates and falling behind on the next two hundred. The TCO graph for template-driven IDP is the wrong shape: it goes up over time, not down.
+
+By the late 2010s, the most successful classic-IDP vendors had already begun layering machine-learning classifiers on top of their templates — using the template as a starting point and ML to handle variance. This bought them another four or five years of relevance, but it did not solve the underlying problem. The template was still the load-bearing abstraction, and the template was still brittle.
 
 ## The single-pass VLM era (2022–2024)
 
-- GPT-4V, Donut, LayoutLMv3 — the moment OCR + layout + understanding collapsed into one model call.
-- What single-pass VLMs got right: ad-hoc layouts, semantic understanding, robustness to format change.
-- What they got wrong: tables (still), grounding (variable), confidence (theatre), reasoning over multi-page documents.
+The vision-language model collapsed the OCR-plus-layout-plus-template stack into a single model call.
+
+Donut [@kim2022donut] is one of the cleanest early examples — a transformer trained directly to map document images to structured outputs without an explicit OCR stage. LayoutLMv3 [@huang2022layoutlmv3] is another, taking a different architectural route but landing in the same place: a single model that understands document structure as part of its native operation, not as a downstream cleanup step.
+
+The arrival of GPT-4V in late 2023 [@openai2023gpt4v] generalized the pattern to commercial frontier models. Suddenly any developer with an API key could feed a document image to a model and ask for structured output. For the first time, the OCR-plus-layout-plus-template scaffolding that had taken a decade to build could be replaced with a single prompt.
+
+What the single-pass VLM era got right was generality. The classic IDP world had been a thousand narrow templates; the VLM world was one general capability. A model that worked at all worked across hundreds of document types. The friction of supporting a new vendor's invoice format dropped from "build a template" to "tweak the prompt."
+
+What the single-pass VLM era got wrong became clear within eighteen months of widespread adoption. **Tables.** VLMs at this generation reliably and quietly garbled tables — merging cells, dropping rows, confusing rowspan and colspan. **Grounding.** A VLM might emit a plausible-looking JSON object with no traceable connection between any field and any region of the source document, making compliance audits effectively impossible. **Confidence.** Single-pass VLMs emit text with no calibrated probability that the text is correct. **Long documents.** The context windows of frontier VLMs in 2023 were not large enough for many enterprise documents, and the workarounds — chunking, sliding windows — re-introduced the same structural-loss problems that the VLM was supposed to eliminate.
+
+The single-pass VLM era is best understood not as a finished destination but as a **stopover**. It proved that document understanding could be collapsed into a model. It did not prove that one collapse, in one pass, was enough.
 
 ## The agentic turn (2024–2026)
 
-- The shift from "model returns answer" to "model plans, extracts, critiques, retries, validates, escalates."
-- Five attributes — preview here, full definition in Chapter 3.
-- 2024 OCR-Agent paper (arXiv 2602.21053) as a canonical reference.
-- 2026 production deployments: Anterior AI + Reducto reaching 99.24% on prior-auth; Databricks Document Intelligence GA; Granite-Docling production release.
+Sometime around mid-2024, the field collectively realized that the single-pass VLM was the wrong architecture for high-stakes extraction. The model could read the page; the model could not, reliably, *check its own work*.
+
+The OCR-Agent paper [@ocragent2024] — one of the canonical references for the agentic-OCR pattern — formalized the alternative. Plan an extraction. Execute it. Critique it. Re-prompt if necessary. Invoke a specialized tool (a table extractor, a layout detector, a schema validator) when the base model is the wrong instrument. Escalate to a human reviewer when the system cannot resolve its own uncertainty. The single-pass output became a multi-pass loop.
+
+The architecture is older than the term. Software engineers had been wrapping retry logic around LLM calls since 2023. What changed in 2024–2026 is that the surrounding ecosystem caught up:
+
+- **Tool calling** matured into a first-class capability across frontier models, making the "invoke a specialized tool" step reliable rather than fragile.
+- **Schema validation** libraries (Pydantic, Zod, JSON Schema) became standard, giving the loop an external oracle to check outputs against.
+- **Grounding** — the requirement that every output field be traceable to a region of the source — moved from research nice-to-have to compliance requirement, especially after early agentic deployments in healthcare and legal made their absence painful.
+- **HITL queue infrastructure** at vendors like Hyperscience, Landing AI, and Reducto became sophisticated enough that "escalate to a human" was a real workflow, not a thrown exception.
+- **Evaluation infrastructure** — golden sets, regression testing, vendor version pinning — became a serious discipline rather than an afterthought.
+
+By 2026, production deployments have benchmarks to point at. Anterior AI, working with Reducto on healthcare prior-authorization workflows, reports 99.24% accuracy on a vertical-specific golden set [@reductoagenticocr]. Databricks Document Intelligence, launched in 2026, reports a **16% performance gain across every agent framework they tested** simply by inserting `ai_parse_document` upstream of the agent's reasoning step [@databricks2026documentintelligence]. IBM Granite-Docling-258M — a 258-million-parameter model — was released under Apache-2.0 in January 2026 and gets within five percentage points of human accuracy on page-element identification [@graniteDocling2026].
+
+These are not hypothetical numbers. They are vendor-reported, and they carry the usual vendor-reported caveats, but the consistency across vendors and the public benchmarks underneath them (ParseBench, RD-TableBench, OmniDocBench, olmOCR-Bench) form a coherent picture: a field that crossed a maturity threshold in 2025–2026.
 
 ## Timeline
 
@@ -47,6 +80,22 @@ timeline
     2026  : Production agentic OCR : ParseBench, Granite-Docling, ADE, Reducto
 ```
 
-## Named take
+## The pattern, restated
 
-> *"Each generation of document processing eliminates the previous generation's most expensive engineering — and creates a new expensive engineering category in its place. Anyone telling you agentic OCR eliminates pipeline work is selling you a screenshot of the demo."*
+Look at the four eras together and a pattern emerges.
+
+Classic OCR eliminated the cost of manual transcription. It created the cost of layout-and-template engineering.
+
+Template-driven IDP eliminated the cost of writing custom layout-extraction code for each form. It created the cost of maintaining a thousand templates.
+
+Single-pass VLMs eliminated the cost of templates. They created the cost of tolerating opaque, ungrounded, table-mangling output.
+
+Agentic loops eliminated the cost of accepting opaque output. They created the cost of orchestration, retry budgets, evaluation infrastructure, HITL queue management, and vendor version drift.
+
+Each generation moved the engineering. None of them eliminated it. Anyone selling you the story that agentic OCR makes the engineering disappear is selling you a screenshot of the demo. The honest version: agentic OCR moves the engineering to places where it has higher leverage. Pipeline glue code, brittle templates, and post-hoc cleanup logic are bad places for engineering effort. Evaluation infrastructure, prompt engineering, and HITL workflow design are good places — because they compound across document types instead of being rebuilt for each one.
+
+That is the trade. It is a good trade. It is not the same trade as "the model figures it out."
+
+::: {.callout-tip title="Named take" appearance="simple"}
+*Each generation of document processing eliminates the previous generation's most expensive engineering — and creates a new expensive engineering category in its place. Anyone telling you agentic OCR eliminates pipeline work is selling you a screenshot of the demo.*
+:::

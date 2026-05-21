@@ -1,33 +1,96 @@
 # Glossary {#sec-glossary}
 
-*(placeholder — will be built during Phase D from terms used across chapters)*
+Short, sharp definitions of the load-bearing terms used in this book. Where a term has a contested or vendor-shaped definition in the wider field, the entry uses the book's working definition with a pointer to the chapter that develops it.
 
 **Agentic OCR**
-: *(definition)*
+: A document-processing system that is **goal-driven, multi-pass, self-correcting, tool-using, and grounded** (Chapter 3). All five attributes must be present. Three of five is "VLM with retries," not agentic OCR.
+
+**Calibration**
+: The property that a model's reported confidence scores correspond to actual accuracy probabilities. A confidence of 0.9 from a well-calibrated model means roughly 90% accuracy on similar inputs. VLMs in 2026 are typically well-calibrated on their training distribution and uncalibrated on out-of-distribution data, which is most production traffic.
+
+**CER (Character Error Rate)**
+: A classic OCR metric measuring per-character extraction accuracy. Right for plain-text OCR, wrong for structured extraction — penalizes harmless formatting differences and under-penalizes structural errors. See Chapter 11.
 
 **Confidence gating**
-: *(definition)*
+: The use of a model's reported confidence score as a threshold for triggering retry, escalation, or output. Common in 2026 production systems; structurally weak as the only gate because confidence scores are not calibrated probabilities. See Chapter 5.
+
+**DABstep**
+: A 2025 benchmark from Adyen and Hugging Face testing multi-step reasoning over real-world data and documents. Top reasoning models score ~14.55% on hard tasks. The reality-check benchmark for the agentic OCR field. See Chapter 10.
+
+**Detection (in self-correction)**
+: One of the three subsystems of self-correction — knowing that an extraction is wrong. The hardest of the three and the most common source of production failures. Requires an external oracle for reliability. See Chapter 5.
+
+**DocTags**
+: An XML-like document representation format used by IBM Granite-Docling and the Docling framework. Preserves layout structure better than Markdown; lighter-weight than HTML for downstream consumption.
+
+**Escalation (in self-correction)**
+: One of the three subsystems of self-correction — routing a document to a human reviewer when detection or repair cannot close the loop. Engineering-intensive; requires HITL queue, reviewer UI, and feedback loop. See Chapter 5.
+
+**Field-level F1**
+: The default accuracy metric for structured extraction. Per-field precision and recall, harmonic mean. Use per-field rather than aggregate to surface which specific fields the system handles well or poorly. See Chapter 11.
+
+**Five-attribute scorecard**
+: The procurement test for whether a system qualifies as agentic OCR. Score the system yes/partial/no on goal-driven, multi-pass, self-correcting, tool-using, and grounded. Five of five is the bar. See Chapter 3.
+
+**Golden set**
+: A hand-labeled set of 200–500 documents from your actual production traffic, used to evaluate vendors, run regression tests, and predict production behavior. The single most important investment in agentic OCR. See Chapter 11.
 
 **Grounding**
-: *(definition)*
+: The property that every extracted field can be traced back to a region of the source document (page number, bounding box, often text span). Required for compliance, auditability, efficient HITL, and structural self-correction. See Chapter 3.
+
+**Hallucination (in agentic OCR)**
+: An extraction that is plausible — type-correct, range-valid, format-compliant — and wrong. Rarer than in single-pass VLMs but harder to detect when it happens. See Chapter 14.
+
+**Hierarchical retrieval**
+: A RAG pattern that retrieves at the section level first, then at the chunk level within retrieved sections. Produces more coherent generation context than flat top-k retrieval on structured documents. See Chapter 12.
 
 **HITL (Human-in-the-loop)**
-: *(definition)*
+: A workflow design in which human reviewers handle documents the agentic system escalates. Healthy 2026 deployments run 1–10% escalation rates with engineered reviewer UIs, feedback loops, and operational discipline. Not eliminable; volume reducible. See Chapter 14.
 
 **IDP (Intelligent Document Processing)**
-: *(definition)*
+: The 2010s category of template-driven document extraction, with vendors including ABBYY, Hyperscience, UiPath, Klippa, and Rossum. Strong on HITL and compliance; weaker on agentic capability without retrofit. See Chapter 7.
+
+**OmniDocBench**
+: A 2025/2026 benchmark from OpenDataLab for document parsing and evaluation across 10 document types, 5 layout types, and 5 languages. Saturated at the top in 2026; the v1.7 hard subset (April 2026) restores discrimination. See Chapter 10.
+
+**OOD (Out-of-distribution)**
+: A document that is sufficiently different from anything in a model's training distribution that the model's behavior is unreliable. Most production traffic includes OOD documents; agentic systems need OOD detection as a pre-extraction step. See Chapter 5.
+
+**ParseBench**
+: A 2026 benchmark from LlamaIndex and Kaggle for end-to-end agentic OCR vendor comparison. ~2,000 pages and 167,000 test rules across five axes. Top result: LlamaParse Agentic at 84.9%. See Chapter 10.
+
+**Pattern A / B / C**
+: The three reference architectures from Chapter 4. Pattern A is single-pass VLM; Pattern B is agentic loop with reflection (the 2026 default); Pattern C is hybrid CV+VLM (the high-stakes choice).
+
+**RD-TableBench**
+: A 2025 benchmark from Reducto for adversarial table extraction. 1,000 PhD-annotated tables, Needleman-Wunsch cell alignment. Top result: Reducto at ~0.90 similarity, ~20pp ahead of hyperscalers. See Chapter 10.
 
 **Reflection loop**
-: *(definition)*
+: The plan-extract-critique-re-prompt-validate cycle that constitutes the core agentic OCR architecture (Pattern B). See Chapter 4 and Chapter 5.
 
-**Shift-left**
-: *(definition)*
+**Repair (in self-correction)**
+: One of the three subsystems of self-correction — fixing a detected error, typically via re-extraction with revised instructions. The easiest of the three subsystems. See Chapter 5.
+
+**Schema validity**
+: A metric measuring whether a system's output parses against the downstream schema. Cheap, deterministic, surprisingly diagnostic. Often catches errors that confidence scores miss. See Chapter 11.
+
+**Shift-left thesis**
+: The argument that moving structural and semantic understanding earlier in the pipeline (into parsing rather than downstream cleanup) produces lower cost-per-correct-extraction even when per-page cost increases. The Databricks 16% across-the-board agent gain is the canonical 2026 evidence. See Chapter 6.
+
+**Silent hallucination**
+: A high-confidence wrong answer that the reflection loop accepts and the system ships. The dominant 2026 production failure mode. Documented at length in the OpenReview "Tiny Silent Hallucinations in Agentic AI" paper. See Chapter 5 and Chapter 14.
 
 **Single-pass VLM**
-: *(definition)*
+: A vision-language model that extracts structured output from a document image in one model call, with no reflection loop or specialized tool routing. The default architecture of 2022–2024. By Chapter 3's definition, not agentic OCR. See Chapter 4 (Pattern A).
+
+**Tool-using**
+: One of the five attributes from Chapter 3 — routine, orchestrated invocation of specialized tools (layout detectors, table extractors, KB lookups) during the extraction workflow. Tool-capable (the model has function-calling) is not the same as tool-using (the model routinely calls them).
 
 **VLM (Vision-Language Model)**
-: *(definition)*
+: A neural model that operates on image + text inputs and outputs. Modern agentic OCR systems use VLMs as the core extraction component; the agentic loop, tool routing, and HITL queue surround the VLM. See Chapter 4.
 
 **Wrapper-washing**
-: *(definition)*
+: A 2026 anti-pattern (Chapter 13). A classic-OCR pipeline with an LLM cleanup step, rebranded as "agentic OCR." Fails the five-attribute test, typically on tool-using.
+
+**Zero Data Retention (ZDR)**
+: A vendor commitment to not persist customer documents or extracted outputs beyond the duration of a single API call. Available from LandingAI ADE Team/Enterprise plans, Mistral Document AI self-hosted, certain Reducto configurations. Verify in eval rather than trusting the marketing claim. See Chapter 11.

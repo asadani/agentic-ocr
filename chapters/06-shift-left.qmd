@@ -1,18 +1,32 @@
 # The Shift-Left Thesis {#sec-shift-left}
 
 ::: {.callout-note title="Executive summary" appearance="simple"}
-- *(Phase C)*
+- The cleanest 2026 evidence for the shift-left thesis: Databricks reports a **16% average performance gain across every agent framework they tested**, simply by inserting their `ai_parse_document` upstream of the agent's reasoning step — with no change to the reasoning layer.
+- "Shift-left" means moving structural and semantic understanding earlier — into parsing — rather than after parsing. The result is *not* lower cost per page; the result is lower cost per **correct extraction with provenance**, which is the denominator that actually predicts your monthly bill.
+- Complexity does not disappear under shift-left. It moves from downstream Python scripts into eval infrastructure, HITL workflows, vendor management, and observability. Anyone who tells you the engineering goes away has not deployed this in production.
+- Shift-left is not a thesis about model size. PP-StructureV3 at under 100M parameters matches Gemini-2.5-Pro on OmniDocBench. The principle is *where* the understanding lives, not how big the model is.
 :::
 
-::: {.callout-tip title="Drafter guidance" appearance="minimal"}
-Target ~4,500 words. See `research/00-book-outline.md` Chapter 6. Open with the Databricks 16% number — the cleanest evidence available that the thesis holds at scale.
-:::
+## The cleanest number in the 2026 literature
 
-## What "shift left" means in document pipelines
+Databricks published an essay in 2026 titled *"Why Frontier Agents Can't Read Documents — and How We're Fixing It"* [@databricks2026documentintelligence]. Most of the essay is a sales pitch for their Document Intelligence product, and most enterprise blog posts can be safely skimmed. This one is worth reading carefully for one number.
 
-- The thesis: move **structural and semantic understanding** earlier in the pipeline — into parsing rather than after parsing.
-- The opposite (and prior) approach: minimal parsing, heavy downstream cleanup. Plain OCR + regex + template + reconciliation logic.
-- The shift-left approach: rich parsing that emits **structured, grounded, validated** output ready for direct downstream use.
+The number is **16%**. Across every agent framework Databricks tested — different reasoning models, different orchestration patterns, different downstream tasks — inserting their `ai_parse_document` step upstream of the agent's reasoning produced an average 16% performance gain. *They did not change the reasoning model.* They did not change the agent's tools, the prompt, or the workflow. They changed only what the document looked like by the time the reasoning model saw it.
+
+This is the cleanest single piece of evidence in 2026 for the shift-left thesis, and it is worth unpacking what it actually shows. It does not show that agentic OCR is better than classic OCR; that was already known. It shows something stronger: that the *ceiling on agent quality* is set by document understanding, not by reasoning ability. A 16% gain across the board, with no change to the reasoner, means that 16% of the apparent reasoning failures were not reasoning failures at all. They were document-reading failures, masquerading as reasoning failures. The agent's downstream behavior looked confused, hallucinatory, or inconsistent — but the cause was upstream, in what the agent was being asked to reason over.
+
+The implication for procurement and architecture is direct: **if you have an agent that is struggling, your first investigation should be in the parsing layer, not the reasoning layer.** This sounds obvious in retrospect and is routinely ignored in practice. Teams that observe poor agent behavior reach for better reasoning models, more elaborate prompts, more sophisticated tool chains. Sometimes those are the right fixes. Often the underlying issue is that the agent is reasoning correctly over wrong inputs.
+
+That, in one paragraph, is the shift-left thesis. The rest of this chapter unpacks what it means architecturally, what it means economically, and where it does and does not apply.
+
+## What "shift left" actually means
+
+The metaphor comes from software engineering, where "shift left" historically referred to moving testing and validation earlier in the development cycle — from production back into CI, from CI back into the developer's editor. The shared structure is moving expensive work to a point where mistakes are cheaper to catch.
+
+In document processing, the work being shifted is **structural and semantic understanding**. The two ends of the pipeline that the shift moves work between:
+
+- **Classic pipeline (pre-shift):** OCR converts the document to text. Layout heuristics try to recover structure post-hoc. Templates pull out specific fields. Cleanup logic, often hand-written, fixes the inevitable errors. Downstream applications receive structured-ish data and apply business logic.
+- **Agentic pipeline (post-shift):** Agentic OCR emits structured, grounded, validated output ready for direct downstream use. Downstream applications receive structured data with provenance and apply business logic. No layout heuristics, no templates, no cleanup logic in between.
 
 ```{mermaid}
 %%| fig-cap: "Where the work moves under the shift-left thesis"
@@ -25,43 +39,106 @@ flowchart LR
     end
 ```
 
-## The economic argument
+The diagram is deceptively neat — it makes the shift look like five boxes collapsed into one. The reality is more like: the five boxes' worth of functionality has been moved into one *larger* box, and the surrounding scaffolding (eval, HITL, observability) has grown to handle the consequences.
 
-- Per-document **compute cost** goes up. Per-page rates for agentic parsing run 5–50× higher than commodity OCR.
-- Engineering effort + downstream error-handling cost goes down faster.
-- **Net cost-per-correct-output drops, not cost-per-page.** This is the headline.
-- Databricks evidence: **16% performance gain across every agent framework** when `ai_parse_document` was inserted upstream — no reasoning-layer changes. The 16% is the cleanest available number.
-- Databricks cost claim: **5–7× lower cost than comparable VLM-only pipelines** for the same downstream accuracy.
+## The economic argument, with numbers
+
+The economic argument is where the shift-left thesis lives or dies, and it is worth running the math carefully.
+
+Per-page parsing cost goes **up** under shift-left. There is no honest version of the thesis that hides this. Classic OCR runs at fractions of a cent per page; agentic OCR runs at one to five cents per page, sometimes more. A team that switches from Textract Basic to LlamaParse Agentic is paying roughly 8× more per page on parsing. If that were the whole calculation, the thesis would be wrong.
+
+The whole calculation includes downstream costs. In the classic-pipeline world, the per-page parsing cost is the smallest line item; the engineering cost of building, maintaining, and debugging the layout-heuristics, template, and cleanup layers is much larger, and the cost of downstream errors (rework, customer complaints, missed extractions that lead to bad decisions) is larger still. Studies of pre-2024 IDP deployments routinely find that **parsing API spend is under 10% of the total cost of running the pipeline**. The other 90% is engineering, ops, error handling, and rework.
+
+The shift-left thesis says: spend more on parsing, save more than the extra spend on the downstream stack. The Databricks number — "5–7× lower cost than comparable VLM-only pipelines" for equivalent accuracy [@databricks2026documentintelligence] — is one data point in that direction. A customer cited in the same essay (Loopback Analytics, clinical-note extraction) reports about 90% lower cost for the same downstream entity-extraction outcome. These are vendor-reported figures, with the usual caveats, but the direction is consistent across vendors and customer case studies.
+
+A worked example. Consider a healthcare claims-processing pipeline at 100,000 pages per month.
+
+| Component | Classic IDP | Pattern B agentic | Pattern C hybrid |
+|---|---|---|---|
+| Parsing (per page) | $0.005 | $0.015 | $0.020 |
+| Monthly parsing | $500 | $1,500 | $2,000 |
+| Error rate | 12% | 3% | 1.5% |
+| Errors / month | 12,000 | 3,000 | 1,500 |
+| Downstream rework ($5/error) | $60,000 | $15,000 | $7,500 |
+| HITL escalation (% × $3/page) | 25% × $3 = $75,000 | 8% × $3 = $24,000 | 5% × $3 = $15,000 |
+| **Total monthly** | **$135,500** | **$40,500** | **$24,500** |
+| **Cost per correct extraction** | **$1.54** | **$0.42** | **$0.25** |
+
+The numbers in this table are illustrative — they are derived from the public data in @sec-commercial-players and @sec-vendor-selection but the specific values vary by vendor, vertical, and document mix. What is robust across realistic parameter choices is the *shape* of the answer: the parsing column changes by 4×, the total monthly cost changes by 5×, and the **cost per correct extraction** — the denominator that should actually be governing the decision — changes by 6×. Pattern C costs four times as much per page as classic IDP and produces output that is six times cheaper per correct extraction. That is the shift-left thesis in one table.
+
+Three caveats are worth flagging before the reader takes the table as a universal recommendation.
+
+**The error costs matter enormously.** The thesis depends on the cost of a downstream error being non-trivial. If your downstream consumer of the parsed output is a search index that nobody complains about when results are imperfect, the rework column is close to zero and the math flips. The shift-left thesis is strongest for high-error-cost workflows (healthcare, legal, finance, KYC) and weakest for low-error-cost workflows (bulk archiving, analytics ingestion of large unstructured corpora).
+
+**The HITL rate is a real engineering parameter.** The table assumes 25% / 8% / 5% escalation rates for the three options, which are roughly consistent with vendor-reported numbers, but every team's actual rates depend on document mix, schema strictness, and reviewer-acceptance thresholds. A team that runs Pattern C at a 20% escalation rate has effectively chosen the worst of both worlds.
+
+**Engineering and infrastructure are not in this table.** Building and operating Pattern C requires more engineering effort than building and operating classic IDP. The table assumes both are deployed and operating; it does not include the up-front cost of getting there. For low-volume pipelines (under 10,000 pages / month), the up-front engineering cost can dominate, and the thesis can fail to apply on TCO grounds even though it is structurally correct.
 
 ## Where complexity actually moves (not disappears)
 
-- Complexity moves from downstream Python scripts into **eval infrastructure** (Chapter 11), **observability** (Chapter 15), and **HITL workflows** (Chapter 9).
-- Anyone who claims agentic OCR eliminates pipeline work has not deployed it. Pipeline work is reduced and relocated, not eliminated.
-- The hidden cost: building golden sets, regression-testing prompts, monitoring drift, managing vendor version pinning. None of these existed in the classic IDP world.
+The honest version of the shift-left thesis is that engineering complexity does not disappear — it *moves*. Specifically, it moves out of three places and into three other places.
+
+Engineering complexity moves **out of**:
+
+- **Hand-written layout heuristics.** The Python script that figures out which lines on the page constitute the line-items table, which row is the header, where the totals live. This logic was the bulk of pre-2024 IDP codebases and is essentially gone in the post-shift world.
+- **Per-vendor templates.** The thousand templates the classic IDP era required, each broken individually by every layout change. These are gone.
+- **Downstream cleanup logic.** The if-this-vendor-then-rewrite-that-field code that handled the long tail of OCR errors. Mostly gone, though not entirely.
+
+Engineering complexity moves **into**:
+
+- **Eval infrastructure.** Golden sets, regression testing, vendor version pinning, drift monitoring. This is now first-class engineering work that pre-shift teams did not need to do at all. Chapter 11 unpacks why.
+- **HITL workflow design and operations.** The reviewer queue, the reviewer-facing UI, the feedback loop back into the system, the operational discipline around queue response times and reviewer agreement rates. These existed in classic IDP but were a small ops function; under shift-left they are a non-trivial engineering effort.
+- **Observability for agentic systems.** Tracing extraction lineage, monitoring escalation rates as a primary production metric, detecting silent hallucinations before they become customer-visible incidents. This category is new in 2026 and is one of the loci of competitive differentiation among vendors (Chapter 15 returns to it).
+
+The net is that the *amount* of engineering work has not gone down. The *shape* has changed. The new categories of work compound across document types and verticals — an investment in eval infrastructure pays off across every workload your team handles, where the equivalent classic-pipeline investment in templates paid off only on one vendor's invoice format. This is the structural reason the thesis is correct on TCO even when per-page cost goes up.
 
 ## Honest counter-arguments
 
-- **Cost-per-page does rise.** For commodity high-volume invoice processing at scale, classic IDP can still win on TCO. The shift-left thesis is not universal.
-- **Latency increases.** Multi-pass reflection adds wall-clock time. Real-time use cases may need single-pass models.
-- **Vendor lock-in increases.** Agentic OCR vendors are stickier than classic OCR. Switching costs are higher.
-- **The 16% gain has caveats.** It's measured on Databricks' own OfficeQA benchmark, which is new and Databricks-published. Treat as directional, not authoritative.
+The thesis is not universal. It is worth being explicit about where it does not apply.
 
-## A worked ROI example
+**Per-page cost can dominate at very high volume.** A team processing 10 million pages per month of commodity invoices has an annual parsing bill of $1.2M at $0.01/page and $5M+ at $0.05/page. At that volume, the cost difference becomes large enough that the downstream savings may not cover it — particularly if the downstream consumer is tolerant of moderate error rates. Bulk archive indexing, large-scale analytics ingestion, and commodity invoice processing at the upper end of the volume curve often tip back toward classic IDP plus a thin cleanup layer.
 
-- 100,000 pages/month healthcare prior-auth workflow.
-- Baseline: classic IDP at $0.04/page = $4,000/month parsing + 25% HITL = $X downstream cost.
-- Agentic: Reducto or Landing AI at $0.015/page = $1,500/month parsing + 5% HITL = $Y downstream cost.
-- Net: agentic is ~3× more expensive on parsing, but downstream costs drop enough that **net per-correct-extraction is lower**.
-- Caveat: numbers vary wildly by vertical. Generic invoice processing at 1M+ pages/month tips back toward classic IDP.
+**Latency is real.** Multi-pass reflection adds wall-clock time. A single-page document that completes in 200ms on Pattern A may take 2–5s on Pattern B and 3–7s on Pattern C. For batch workloads, latency is invisible. For interactive use cases — a chat interface over a document, a real-time form-fill assistant — the latency budget can rule out the shift-left architectures entirely.
 
-## Shift-left is not about model size
+**Vendor lock-in is worse.** A team that has built around Reducto, or LlamaParse, or Landing AI ADE, has more switching cost than a team that built around Tesseract plus a Python template engine. The dependency is sharper. The version drift is more consequential (a vendor's behavior on edge cases changes between major versions in ways that broke prior agreements). Some teams legitimately decide the lock-in is unacceptable and accept the higher engineering burden of an open-source path.
 
-- A small, layout-aware model **shifts left harder** than a large model called naively.
-- PP-StructureV3 at <100M params matches Gemini-2.5-Pro on OmniDocBench — and PP-StructureV3 is doing shift-left in a way the large model isn't.
-- Granite-Docling-258M is the strongest 2026 example of "small model, shifted left."
+**The 16% has caveats.** It is measured on Databricks' own OfficeQA benchmark, which is new and Databricks-published. The number is directional, not authoritative. The shift-left thesis is robust in the general case, but no single number should be taken as the proof.
 
-## Named takes
+## Shift-left is not a thesis about model size
 
-> *"Shift-left is a thesis about where structural understanding lives. It is not a thesis about model size. PP-StructureV3 at 100M params is shifting left harder than a 70B model called twice."*
+The single sharpest counter to the popular reading of the shift-left thesis is the PP-StructureV3 result.
 
-> *"If you can articulate your ROI only in cost-per-page, you have not understood the shift-left thesis. The right denominator is cost-per-correct-extraction-with-provenance."*
+PP-StructureV3 is a layout-and-structure model in the PaddleOCR family. It runs at under 100 million parameters. On OmniDocBench, it achieves an edit distance of 0.145 on English documents and 0.206 on Chinese documents [@paddleocrvl], which is roughly at parity with Gemini-2.5-Pro — a model with many orders of magnitude more parameters and many orders of magnitude more compute cost per inference.
+
+The model is small. The model is specialized. The model is shifted *all the way left* — it does structural understanding at the parsing stage, with layout-aware architecture rather than scale.
+
+The reading "shift-left means use a big VLM" misses the lesson. Shift-left is a thesis about where the structural understanding lives, not about how much compute you throw at it. A small layout-aware model that emits clean structural output is shifting left in the sense the thesis cares about. A 70B-parameter general VLM called twice in a reflection loop is doing something different — also useful, also defensible, but not what is happening when PP-StructureV3 beats Gemini-2.5-Pro on the relevant metric.
+
+This is one of the reasons the open-source landscape in 2026 (Chapter 8) is so interesting. The open-source frontier is full of small, specialized, layout-aware models that are out-performing large general VLMs on extraction tasks while being orders of magnitude cheaper to run. That is the shift-left thesis playing out at the model layer rather than the architecture layer.
+
+## How to act on this thesis
+
+If you are a buyer:
+
+- Measure your **downstream error cost** before you measure parsing accuracy. The thesis is only meaningful if downstream errors are expensive.
+- Compute **cost per correct extraction with provenance**, not cost per page. Cost per page makes Pattern A look great. Cost per correct extraction often does not.
+- Insist on **grounded outputs**. Without grounding, the thesis's downstream savings (in audit and HITL efficiency) cannot be realized.
+
+If you are an implementer:
+
+- Treat **eval infrastructure as the primary investment**, not the parsing layer. The classic-pipeline engineering effort goes away; the eval-infrastructure engineering effort takes its place.
+- Build **HITL workflows as a first-class subsystem**, not a side queue. Production agentic OCR's economic case depends on HITL being efficient.
+- Plan for **observability** that is shaped around agentic workflows — extraction lineage, escalation rates, calibration tracking — rather than around web-app metrics.
+
+If you are a skeptic:
+
+- Look at the **shape** of the cost change, not the per-page numbers. Pattern A's cost-per-page is hard to beat. Pattern C's cost-per-correct-extraction is hard to beat. They are different things.
+- Check whether your workload has the **error-cost asymmetry** the thesis requires. If a missed extraction is genuinely cheap, the thesis does not apply to you, and the right answer is to stick with classic IDP.
+
+::: {.callout-tip title="Named takes" appearance="simple"}
+*Shift-left is a thesis about where structural understanding lives. It is not a thesis about model size. PP-StructureV3 at 100M params is shifting left harder than a 70B model called twice.*
+
+*If you can articulate your ROI only in cost-per-page, you have not understood the shift-left thesis. The right denominator is cost-per-correct-extraction-with-provenance.*
+
+*The 16% across-the-board agent gain is one number. The point of the number is not the number; it is that document reading is the ceiling on agent quality, and reading is mostly solved.*
+:::

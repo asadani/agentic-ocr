@@ -1,37 +1,106 @@
 # Introduction: The Agentic Turn {#sec-introduction}
 
 ::: {.callout-note title="Executive summary" appearance="simple"}
-- *(Phase C — distill from the beats below)*
-:::
-
-::: {.callout-tip title="Drafter guidance" appearance="minimal"}
-Target ~2,000 words. Voice: opinionated practitioner. See `research/00-book-outline.md` Chapter 1 for the full beat sheet.
+- The 2026 bottleneck on agent quality is not reasoning. It is reading. Frontier agents that look brilliant in benchmark sandboxes routinely fail in production on enterprise documents, and most of that failure is happening at the parsing layer, not the reasoning layer.
+- "Agentic OCR" is the load-bearing term of the year, and most of what is sold under that label does not qualify. This book gives you a five-attribute test to call it.
+- 67% of enterprise document-processing initiatives are now actively evaluating agentic approaches — up from 23% two years ago. The vocabulary, vendor maturity, and benchmarks have crossed a usability threshold simultaneously.
+- The book is layered: executive callouts at the top of each chapter, technical body underneath. Read both, or read either, depending on what you need this week.
 :::
 
 ## What changed
 
-- Open on a single concrete failure scene: a frontier agent reading a treasury bond, "$10,000" rendered as "$3,000," a downstream agent acting on the wrong number (Databricks example).
-- Establish the core thesis: *the bottleneck for agent quality in 2026 is not reasoning — it is reading.*
-- One-sentence definition of "agentic OCR" to anchor the rest of the book (full definition lives in Chapter 3).
+A frontier agent reads a treasury bond document. The face value is $10,000. The agent's output says $3,000. The agent's reasoning layer — a model that can write a five-paragraph argument about credit risk and make tea — accepts the $3,000 without complaint and proceeds to plan a downstream action on the wrong number.
+
+This is a true 2026 failure mode, lifted almost verbatim from a Databricks blog [@databricks2026documentintelligence], and it is the cleanest single illustration of what changed in this field over the last eighteen months. The agent did not get the reasoning wrong. It got the *reading* wrong. The reasoning was excellent reasoning on the wrong inputs. By the time the planner saw the data, the data was already poisoned.
+
+This pattern repeats across every domain where enterprise agents touch documents. An insurance prior-authorization agent denies coverage because it misread a date on a referral letter. A financial-analysis agent produces a flawless quarterly summary based on numbers that were merged from two adjacent table cells the parser couldn't disentangle. A legal-discovery agent flags the wrong clause for review because a footnote referenced "Section 4.2" and the parser dropped the footnote. In every case the reasoning layer is doing its job; the document layer is not.
+
+The thesis of this book, stated in one sentence: **the ceiling on agent quality in 2026 is set by document understanding, not by reasoning.** Or, in the version that fits on a slide: *reading is the ceiling, not reasoning.*
+
+The category of system that addresses this — that does multi-pass, self-correcting, tool-using, grounded document parsing in service of a structured downstream goal — is what the field has settled on calling "agentic OCR." The term is doing a lot of work. Vendors who do nothing of the sort are using it freely. Chapter 3 will give you a five-attribute test to separate the real systems from the relabeled wrappers; the rest of the book will give you the architecture, the players, the benchmarks, the evaluation rubrics, and the integration patterns to act on the distinction.
 
 ## Why 2026 matters
 
-- Cite the **67% adoption** number — enterprises evaluating agentic vs. classic IDP, up from 23% two years prior.
-- Note the structural forcing functions: CMS prior-auth transparency rule (March 2026), enterprise consolidation to one or two vendors per workflow, capital concentration.
-- Land the point that this book exists because the field crossed a threshold this year — vocabulary, vendor stability, and benchmark maturity are simultaneously sufficient.
+Three things happened in roughly the same eighteen-month window that turned agentic OCR from a research curiosity into a category enterprises buy.
+
+**Adoption crossed a threshold.** As of mid-2026, **67% of enterprise document-processing initiatives are explicitly evaluating agentic approaches over traditional OCR-plus-rules stacks** [@agenticaiinstitute2026]. Two years ago that number was 23%. This is the kind of jump that goes from "interesting niche pilot" to "you should probably know what this is when it shows up in a procurement deck."
+
+**Regulation started forcing the issue.** Beginning **March 31, 2026**, CMS requires U.S. health plans to publicly report their average turnaround times for prior authorizations, plus denial, appeal, and overturn rates [@cms2026interoperability]. That single rule turned manual prior-auth workflows from a tolerable cost center into a board-level risk. The math now favors any system that can credibly cut review time without inflating denial rates. The healthcare vertical is moving first because regulation moved first; legal and finance are following.
+
+**Benchmarks finally caught up to the work.** ParseBench, the first 2026 benchmark designed specifically for AI agents reading documents [@parsebench2026], publishes a public leaderboard with ~2,000 human-verified pages and 167,000 test rules. olmOCR-Bench produces reproducible unit-test-style scores for open-source models [@olmocrbench2025]. RD-TableBench gives you a thousand adversarial tables to humble vendors who claim table extraction is solved [@rdtablebench]. DABstep, the only benchmark that tests multi-step reasoning over real-world data and document packets, reports a top score of around **14.55% on hard tasks** — a number low enough to function as a permanent reality check on anyone selling magic [@dabstep2025].
+
+Each of these on its own would be modest. Together they explain why the conversation has changed. The technology is no longer prospective. The vendors are no longer all startups. The benchmarks are no longer all gameable. The regulation is no longer hypothetical. Pick any quarter from 2024 and the same conversation about agentic OCR would have ended in "interesting, let's revisit next year." In 2026 it ends with a budget line item.
+
+The flip side of that maturity is that the field is also more crowded, more confused, and more mis-marketed than at any previous point. "Agentic" is the word that lets people charge ten times more for a retry loop. The five-attribute test in Chapter 3 exists precisely so that you do not get fooled.
+
+::: {.callout-warning title="When this book may not be for you" appearance="default"}
+Before you read further: agentic OCR is not for every workload. The most expensive mistake in this space is deploying it for the sake of it, on a use case that cannot pay for it. The 2026 numbers make the threshold concrete.
+
+Realistic all-in cost-per-correct-extraction for **true agentic OCR** in 2026:
+
+- Parsing API spend: $0.005 – $0.056 per page (Reducto, LlamaParse Agentic, LandingAI ADE).
+- HITL amortized over a typical 5% escalation rate: $0.05 – $0.25 per page.
+- Engineering, eval infrastructure, vendor management: real but case-dependent.
+
+**Total: roughly $0.05 – $0.30 per correctly-extracted page.**
+
+If your downstream business value per page is around **one cent**, premium agentic OCR's parsing cost alone is 1.2× to 6× your entire per-page budget — before any engineering or HITL costs. The category structurally cannot pay for itself at that price point. The cheapest credible parser (Mistral OCR 3 Batch at $0.001/page) still consumes about 10% of a one-cent ROI on parsing alone, leaving nothing for the surrounding work. Self-hosted open-source (OlmOCR-2 at ~$0.00018/page on an H100) is the only configuration whose *parsing* cost fits — but those deployments still need an engineering team that the per-page ROI has to fund.
+
+You probably should **not** build agentic OCR if:
+
+- Your downstream per-page value is below roughly 5 cents (and certainly below 1 cent).
+- Your documents are clean, native PDFs or HTML where parsing is not actually the bottleneck. Diagnose the chain (Chapter 12) before you upgrade.
+- Your workload is narrow and stable — one or two vendor templates that change rarely. Classic template-driven IDP still wins on TCO here.
+- Your stakes are low and your volume is enormous (10M+ pages/month of commodity invoices). Hyperscaler basic OCR plus a thin cleanup layer can be 50× cheaper for the same downstream outcome.
+- Your real bottleneck is reasoning, retrieval, or workflow design, not document understanding. Agentic OCR will not fix those.
+
+This book is most useful for readers whose answer to all five is "doesn't apply" or "I'm not sure" — the second case is exactly what @sec-dont-build will help you resolve. If the answer to one or more is a confident "yes," save the budget and revisit when the numbers change.
+:::
 
 ## Who this book is for
 
-- Two readers, one book. Implementers and decision-makers, sharing each chapter.
-- Each chapter opens with an executive callout; the technical body follows.
-- Skip-paths: foundations for newcomers, Part III for buyers, Part IV for integrators, Part V first for skeptics.
+There are two readers, and the book is structured so they read it together.
+
+The first reader is a **technical implementer** — an ML engineer, an applied scientist, an IDP architect. You want architecture diagrams that actually decompose into deployable components. You want named tradeoffs between single-pass VLMs, hybrid CV-plus-VLM pipelines, and reflection-loop agents. You want evaluation rubrics you can paste into a doc and start running on Monday. You want to know which open-source model to start with for a self-hosted deployment, and what a calibrated confidence score actually looks like.
+
+The second reader is a **technical decision-maker** — a CTO, a head of AI, a VP of engineering choosing among vendor pitches. You want the shift-left thesis explained without hand-waving and without becoming a slide deck. You want a vendor-selection framework that does not read like a Gartner brochure. You want to know what 99.24% accuracy on healthcare prior-auth actually represents, what it cost the buyer who got there, and whether the ROI replicates. You want to know what you can and cannot delegate to your team without sitting in on the weekly review.
+
+These two readers are not the same person. They are, however, frequently in the same room making the same decision from different perspectives. The book is organized so they can read it together: each chapter opens with a callout-styled executive summary aimed at the second reader, then proceeds into the technical body aimed at the first reader. If you are the executive, the callout is yours; if a callout makes you want more detail, the body is right below it. If you are the implementer, the callouts are still worth a glance because they tell you what your management thinks the chapter is going to say.
+
+A third reader exists in smaller numbers: the **skeptic** who suspects the whole category is overhyped. The book is friendly to that reader, too. Chapters 13 and 14, on anti-patterns and unsolved problems, were written with the skeptic specifically in mind. If your prior is that agentic OCR is the next round of NLP hype, start there; if the case for the skeptical position survives those chapters, your prior is well-founded.
 
 ## How to read this book
 
-- Five parts. Linear but skippable.
-- Pointer to glossary, cheatsheet, and bibliography in the appendices.
-- One paragraph on what the book is *not* — not a tutorial, not vendor-neutral, not stable forever.
+The book has five parts and fifteen chapters. It is roughly linear but designed for skipping.
 
-## Named take
+**Part I (Chapters 1–3) — Foundations.** What agentic OCR is, where it came from, why the definition matters.
 
-> *"If your agent can read perfectly but reason imperfectly, you have a model problem. If your agent reasons brilliantly on the wrong inputs, you have a document problem — and 2026 says the document problem is bigger."*
+**Part II (Chapters 4–6) — Architecture.** The three reference architectures, how self-correction actually works, and the shift-left thesis.
+
+**Part III (Chapters 7–9) — The 2026 landscape.** Commercial vendors, open-source players, vendor selection.
+
+**Part IV (Chapters 10–12) — Evaluation and integration.** The benchmark landscape, how to evaluate your own pipeline, and the (often-misunderstood) relationship between agentic OCR and retrieval-augmented generation.
+
+**Part V (Chapters 13–15) — Reality check.** Anti-patterns, what the technology does not solve, and where 2027 is heading.
+
+Read straight through if the field is new to you; Parts I and II build the vocabulary that everything else depends on. Skip to Part III if you already know what agentic OCR is and you want the vendor landscape. Skip to Part IV if you have already chosen a vendor and need to wire it into your stack. Read Part V first if you suspect you are being sold something — that part is calibrated to puncture vendor narratives, and if the case for agentic OCR survives that puncturing, the rest of the book is the field guide for acting on it.
+
+## What this book is not
+
+A few honest disclaimers.
+
+This is not a tutorial. There is no code-along chapter that walks you through implementing your own agent. There is plenty of code in the open-source ecosystem already; the gap this book fills is not "another tutorial."
+
+This is not vendor-neutral. The book has opinions. They are labeled — every chapter ends with at least one explicitly tagged **Named take** that you can quote, push back on, or steal. The opinions are derived from public benchmarks, vendor documentation, primary research, and field experience, all cited in the bibliography. You should disagree with some of them. The labels are there precisely so the disagreement is productive.
+
+This is not stable forever. Mid-2026 is a snapshot. Quarter by quarter the leaderboard moves, pricing changes, models get released, vendors get acquired. The frameworks in this book — the five-attribute test, the three reference architectures, the vendor-selection decision tree, the anti-pattern checklist — should age better than the vendor names. When the names change, look up the new names; the categories should still hold.
+
+## A note on sources
+
+This book is a synthesis of three things: original research collected during 2025–2026, public benchmarks and vendor documentation through May 2026, and field experience working on agentic OCR pipelines across healthcare, financial services, and enterprise SaaS. Where vendors publish numbers, those numbers are cited with the appropriate "vendor-published" caveat. Where benchmarks publish leaderboards, the dates are noted, because OCR benchmark leaderboards have an unusually short half-life. Where claims come from primary research, the paper is cited.
+
+The bibliography lives in Appendix B. The glossary lives in Appendix A. There is a one-page cheatsheet in Appendix C that you can print and tape to a wall; it is the book in one page if you ever need to remember the framework at speed.
+
+::: {.callout-tip title="Named take" appearance="simple"}
+*If your agent can read perfectly but reason imperfectly, you have a model problem. If your agent reasons brilliantly on the wrong inputs, you have a document problem — and 2026 says the document problem is bigger.*
+:::

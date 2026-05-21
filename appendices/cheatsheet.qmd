@@ -1,31 +1,131 @@
 # Quick-Reference Cheatsheet {#sec-cheatsheet}
 
-*(placeholder — assembled during Phase D as a one-page summary across the book)*
+The book in one page. Print this, tape it to a wall, refer back when the marketing language starts to drift.
 
 ## The five attributes
 
-1. Goal-driven
-2. Multi-pass
-3. Self-correcting
-4. Tool-using
-5. Grounded
+A system is **agentic OCR** if and only if it is:
+
+1. **Goal-driven** — operates against a structured target (schema, extraction goal), not against the document.
+2. **Multi-pass** — iterates with at least one self-review pass, not single-shot.
+3. **Self-correcting** — has working detection, repair, and escalation subsystems (all three).
+4. **Tool-using** — routinely invokes specialized tools (layout detector, table extractor, schema validator, KB lookup), not just function-calling-capable.
+5. **Grounded** — every output field traces to a source region (page, bounding box).
+
+**Three of five is "VLM with retries." Four of five is borderline. Five of five is the bar.**
+
+See Chapter 3 for the full definition; Chapter 13 for the anti-patterns that come from missing each attribute.
 
 ## The three architecture patterns
 
-| Pattern | Best for | Failure mode |
-|---|---|---|
-| Single-pass VLM | Simple, well-formed docs | Tables, complex layout |
-| Agentic loop | High-stakes extraction | Latency, cost-per-page |
-| Hybrid CV + VLM | High volume, varied layouts | Engineering complexity |
+| Pattern | Description | Best for | Failure mode |
+|---|---|---|---|
+| **A — Single-pass VLM** | One model call; structured output | Low-stakes, low-variability workloads; commodity OCR | Tables, long documents, ungrounded output |
+| **B — Agentic loop with reflection** | Plan → extract → critique → re-prompt → validate | The 2026 default; messy enterprise docs at moderate stakes | Silent hallucinations; retry thrash |
+| **C — Hybrid CV+VLM** | Layout-first; route regions to specialized extractors | High-stakes, adversarial tables, regulated workloads | Engineering complexity; operational overhead |
 
-## Vendor selection in one diagram
+See Chapter 4 for the full treatment.
 
-*(placeholder — small version of the @sec-vendor-selection diagram)*
+## The decision tree in one diagram
+
+```
+START
+  │
+  ├─ Volume < 10k pages/mo? ───→ Hyperscaler API (Pattern A)
+  │
+  ├─ Volume > 1M pages/mo + engineering capacity? ───→ Self-hosted open-source
+  │
+  └─ Otherwise:
+       ├─ High stakes (compliance, healthcare, finance) ───→ Pattern C + HITL
+       ├─ Wide variability, moderate stakes ───→ Pattern B (AI-native specialist)
+       └─ Narrow + stable workload ───→ Classic IDP or template-based
+```
+
+See Chapter 9 for the full framework, including the "should I build this at all?" check in @sec-dont-build.
+
+## The cost rule of thumb
+
+**All-in cost-per-correct-extraction for true agentic OCR in 2026: $0.05 – $0.30 per page.**
+
+This includes parsing API spend, HITL amortized over typical 5% escalation, and eval/observability/vendor management.
+
+**Defensibility thresholds**:
+- Downstream per-page value **below 1¢**: agentic OCR has already eaten your budget. Don't build.
+- Downstream per-page value **1–5¢**: marginal at best; wait for prices to drop.
+- Downstream per-page value **5–25¢**: economically defensible if the workload justifies the architecture.
+- Downstream per-page value **above 25¢**: comfortably above the threshold (healthcare prior-auth, KYC, contract review, clinical-note coding).
+
+The objective function to minimize: **cost-per-correct-extraction-with-provenance**, not cost-per-page.
+
+See Chapter 9 and Chapter 11.
 
 ## Benchmarks at a glance
 
-*(placeholder — one-row-per-benchmark summary)*
+| Benchmark | Year | Best use | Caveat |
+|---|---|---|---|
+| **ParseBench** | 2026 | Commercial vendor comparison (LlamaParse Agentic 84.9%) | Vendor-published |
+| **olmOCR-Bench** | 2025 | Open-source model comparison (Chandra 83.1) | English-only |
+| **OmniDocBench v1.7** | 2026 | Cross-validation (use hard subset) | Saturated at the top |
+| **RD-TableBench** | 2025 | Table extraction (Reducto ~0.90) | Vendor-published |
+| **DABstep** | 2025 | Reality check (~14.55% ceiling) | Small N |
+| **SCORE-Bench** | 2026 | Generative-parser eval | New methodology |
+| **OfficeQA** | 2026 | Shift-left thesis evidence (16% gain) | Databricks-maintained |
+
+**The most important rule**: benchmark rank ≠ production rank. Your golden set wins.
+
+See Chapter 10.
 
 ## Anti-pattern smell tests
 
-*(placeholder — one-line tests for each anti-pattern)*
+A one-line check for each of the five dominant anti-patterns from Chapter 13:
+
+1. **Wrapper test**: Does the system satisfy all five attributes? *(If not, it's wrapper-washing.)*
+2. **Schema-flexibility test**: What does the system do with an unexpected field? *(If it drops it silently, schema rigidity.)*
+3. **HITL test**: What happens to a confident-but-wrong output? *(If it ships, ignoring HITL.)*
+4. **Calibration test**: Plot confidence vs. accuracy on your golden set — is the curve smooth? *(If not, you're over-relying on confidence.)*
+5. **Decomposition test**: When a downstream answer is wrong, can you tell whether parsing or reasoning was at fault? *(If not, you're conflating them.)*
+
+Print these. Use them before signing.
+
+## Six eval properties of a healthy 2026 deployment
+
+From Chapter 11:
+
+- **Golden set**: 200–500 docs from production, refreshed quarterly.
+- **Metrics**: field-level F1, schema-validity, grounding accuracy (per-field, not aggregate).
+- **Regression cadence**: weekly subset, monthly full, quarterly refresh.
+- **HITL closed-loop**: corrections flow into golden set, prompt tuning, vendor selection.
+- **Cost-per-correct-extraction**: tracked as the primary economic metric.
+- **OOD slice**: held out and measured separately.
+
+## RAG + agentic OCR
+
+The three concrete ways agentic OCR helps RAG (Chapter 12):
+
+- **Structural metadata** → semantic chunking (chunks = sections, not fixed windows).
+- **Table awareness** → tables as atomic chunks with cell-relationship metadata preserved.
+- **Grounding** → real citations, audit infrastructure.
+
+The diagnostic before upgrading the parser: hand-trace 50 wrong-answer queries. If parsing failures are under 30% of total, parsing is not your bottleneck. Don't spend $500k upgrading the wrong layer.
+
+## The three named takes worth memorizing
+
+1. *"If your agent can read perfectly but reason imperfectly, you have a model problem. If your agent reasons brilliantly on the wrong inputs, you have a document problem — and 2026 says the document problem is bigger."*
+
+2. *"'Agentic' is the word that lets people charge 10× for a retry loop. The five-attribute test exists so you don't get fooled."*
+
+3. *"Most teams pick a vendor before they pick a metric. This is backwards. Choose the metric that determines your downstream cost, then choose the vendor that minimizes that metric."*
+
+## What 2027 commoditizes (and doesn't)
+
+**Will commoditize**: parsing quality, single-pass VLM extraction, basic table extraction, multilingual coverage.
+
+**Will not commoditize (yet)**: agentic orchestration platforms, compliance and grounding infrastructure, observability for document agents, vertical specialization.
+
+Build your vendor relationships and your engineering investment around the categories that will not commoditize.
+
+## The thesis, restated
+
+**Reading is the ceiling on agent quality, and reading is mostly solved. The next ceiling is trust.**
+
+That is the entire book.

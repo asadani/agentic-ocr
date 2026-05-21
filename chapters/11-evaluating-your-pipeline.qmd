@@ -1,66 +1,172 @@
 # Evaluating Your Own Pipeline {#sec-evaluating-pipeline}
 
 ::: {.callout-note title="Executive summary" appearance="simple"}
-- *(Phase C)*
+- The single most important investment in agentic OCR is a **golden set** of 200–500 hand-labeled documents drawn from your actual production traffic. Build it before you choose a vendor. Teams that skip this step pick the wrong vendor with predictable regularity.
+- **Metric selection is domain-dependent.** Character Error Rate is wrong for structured extraction. Field-level F1 is the default. Table-cell accuracy needs alignment (Needleman-Wunsch), not Jaccard. Schema-validity rate is cheap and surprisingly diagnostic. Pick the metric that predicts your downstream cost.
+- The HITL queue is **part of your eval**, not a fallback bolted on the side. Reviewer accept/correct rates are the most honest production-accuracy signal you will get, and most teams underutilize them.
+- The number that predicts your monthly bill is **cost-per-correct-extraction-with-provenance**. It is computable from three measured numbers (API cost, accuracy, HITL escalation rate × HITL cost). It is the answer; the rest is mostly noise.
 :::
 
-::: {.callout-tip title="Drafter guidance" appearance="minimal"}
-Target ~4,500 words. See `research/00-book-outline.md` Chapter 11. Open with the team that picked by ParseBench and watched 8pp of accuracy disappear on Day 1.
-:::
+## Why the public benchmarks won't save you
 
-## Golden sets: the only thing that matters
+A common 2026 procurement story: a team picks the highest-scoring vendor on ParseBench, deploys to production, and watches accuracy fall by 5–10 percentage points on Day 1. The benchmark score was real. The production gap is real. The difference is that ParseBench's distribution and the team's production distribution are not the same.
 
-- The single most important investment in agentic OCR is a **golden set** that reflects your actual production distribution.
-- 200–500 hand-labeled documents is enough to start. Add 50/quarter as production evolves.
-- Build it with the same people who consume the output. The labels embed their judgment about "correct."
-- Why teams skip this: labeling is slow, expensive, and unglamorous. Why they regret it: vendor benchmarks don't match production, and there's no other ground truth.
+This is not a problem with ParseBench. The benchmark is well-designed for what it does, and what it does — measure end-to-end agentic-parsing quality on a curated set of high-stakes enterprise documents — is genuinely useful. The mistake is treating any public benchmark as a forecast of your production behavior. No public benchmark, however well-designed, predicts your performance on documents the benchmark has never seen.
+
+The discipline that closes the gap is straightforward to describe and operationally rare to execute. Build a golden set. Measure the right metrics. Run regression tests. Treat HITL as part of the eval. Compute the cost-per-correct-extraction number. Repeat quarterly.
+
+This chapter walks each of those steps. Most of it is not new — every team operating agentic OCR in production has run into these requirements eventually. The hope of this chapter is that you hit them deliberately rather than after the third production incident that the public benchmarks did not predict.
+
+## Golden sets — the only thing that matters
+
+A golden set is a collection of hand-labeled documents from your production traffic, against which every parsing decision is evaluated. Its purpose is to give you a measurement that *does* predict your production behavior, because it *is* your production behavior — sampled, labeled, and made into a stable evaluation target.
+
+The discipline has four parts:
+
+**Selection.** Pull 200–500 documents from your actual production traffic. Stratify by document type, source vendor, and difficulty. Include the edge cases your team complains about most loudly — the ones that the system gets wrong consistently — not the easy cases your current pipeline already handles. The temptation to over-represent clean documents because they are faster to label is the most common golden-set construction error.
+
+**Labeling.** Hand-label each document with the schema your downstream consumers actually use. Field by field. Not the schema in a vendor's documentation — your schema, the one your downstream system expects. Label the cases the system finds ambiguous: missing fields, illegible regions, contested values. The labels embed the team's judgment about correctness, and that judgment is the load-bearing artifact.
+
+**Provenance metadata.** For each labeled field, capture the source region (page number, bounding box) where the value originated. This makes the golden set usable not just for accuracy measurement but for **grounding accuracy** measurement — does the vendor's reported source region match the actual region. Grounding measurement is a separate axis, and the golden set is the only place you can measure it reliably.
+
+**Maintenance.** Add 50 new documents per quarter, drawn from recent production. Retire documents that have become unrepresentative (vendors that no longer exist, document types that no longer appear). The golden set is a living artifact, not a one-time project. Teams that label once and never update produce evaluations that predict behavior on the 2024 distribution while their production distribution moved on.
+
+The labor cost is real. A 200-document golden set with thorough labeling and provenance metadata typically takes one to three weeks of focused effort by a labeler who understands the domain. The labor cost is also small relative to the cost of picking the wrong vendor. Teams that resist building a golden set on cost grounds routinely spend ten times the labor cost on a wrong-vendor rollback six months later.
+
+A specific recommendation worth highlighting: **label the golden set with the same people who will be operating the HITL queue.** Their judgment about what constitutes a correct extraction is the judgment that will govern the production system. Labels from a separate "evaluation team" drift away from operational reality and produce eval scores that do not match what the HITL reviewers find in practice.
 
 ## Metric selection per domain
 
-- The wrong metric quietly destroys vendor selection. Match the metric to the downstream cost.
-- **Character Error Rate (CER):** correct for plain-text OCR. Wrong for structured extraction — penalizes formatting differences that don't matter.
-- **Field-level F1:** the default for extraction. Per-field precision/recall. Use this for invoices, forms, KYC.
-- **Table-cell accuracy:** needs alignment (Needleman-Wunsch, Hungarian). Jaccard is wrong; it doesn't respect cell position.
-- **Schema validity rate:** does the output parse as your downstream schema? Cheap to compute; surprisingly diagnostic.
-- **Grounding accuracy:** does the cited region actually contain the extracted value? Critical for compliance.
-- **Reasoning accuracy:** for DABstep-style downstream tasks. Often a separate eval from extraction.
+The wrong metric quietly destroys vendor selection. The choice of metric needs to match the downstream cost of an error, and the right choice varies by workload type.
+
+**Character Error Rate (CER).** The metric that classic OCR has used for thirty years. Correct for plain-text OCR — does the system get the characters right. Wrong for structured extraction — penalizes formatting differences that do not matter (extra whitespace, equivalent date formats, capitalization variants on enum values) and under-penalizes structural errors (a wrong field value in a correctly-extracted character stream).
+
+CER is the right metric for: scanning books, indexing email attachments, accessibility-focused OCR. It is the wrong metric for most agentic-OCR workloads.
+
+**Field-level F1.** The default metric for structured extraction. Per-field precision (of the fields the system extracted, what fraction match the golden label) and recall (of the fields in the golden label, what fraction did the system extract). F1 is the harmonic mean.
+
+Field-level F1 is the right metric for: invoices, forms, contracts, claims, KYC documents, any workload where the output is a fixed-schema JSON object. The right granularity is per-field, not aggregate: per-field F1 tells you which specific fields the system handles well and which it struggles with, which is operationally diagnostic. Aggregate F1 averages across fields and hides the variance.
+
+**Table-cell accuracy with alignment.** Tables need their own metric. Jaccard similarity on the set of cell values is wrong because it does not respect cell position — a system that gets every cell value right but in the wrong row and column scores perfectly on Jaccard and is, in fact, useless.
+
+The right alignment metrics are **Needleman-Wunsch** (used in RD-TableBench [@rdtablebench]) or **Hungarian assignment**, both of which match predicted cells to ground-truth cells with positional constraints and penalize misalignments. The exact choice between Needleman-Wunsch and Hungarian depends on whether row/column order matters more (Hungarian) or whether sequence alignment is the right model (Needleman-Wunsch). For most enterprise tables, Hungarian is the safer default.
+
+**Schema-validity rate.** Cheap, deterministic, and surprisingly diagnostic. Does the system's output parse as your downstream schema? Are required fields present? Are dates in valid ranges? Are enums populated with allowed values?
+
+Many extraction errors that confidence checks miss show up as schema failures. A system with 95% field-level F1 and 80% schema-validity rate is producing per-field correct outputs that aggregate into structurally invalid documents — a pattern you want to catch in eval, not in production.
+
+**Grounding accuracy.** For compliance workloads, does the vendor's reported source region for a field actually contain the extracted value? Measured as the IoU (intersection over union) between predicted and ground-truth bounding boxes, or as a binary "does the predicted region contain the value" check.
+
+Without grounding accuracy, you cannot audit. Without auditability, regulated workloads cannot deploy. Make this metric part of the eval from day one, not a feature added at compliance-review time.
+
+**Reasoning accuracy.** For DABstep-style downstream tasks where the agentic system's output feeds into a reasoning step. This is a separate eval from extraction; conflating them produces misleading results. If your workflow has a reasoning layer, evaluate both extraction (with field-level F1) and downstream task success (with task-specific metrics) separately.
+
+A general principle: **pick one to three metrics that match your downstream cost, track them per-field where applicable, and resist the urge to add more.** A team that evaluates on twelve metrics is implicitly saying it has no model of which errors matter most. Pick the metrics. Defend the choice. Track them religiously.
 
 ## Regression testing
 
-- Vendor versions change. Pin them.
-- Run your golden set against every new vendor version before production.
-- Track per-field accuracy over time. The aggregate may stay flat while a specific field silently degrades.
-- A regression-test cadence: weekly on a 50-doc subset, monthly on the full golden set, full re-eval on vendor major-version bumps.
+Vendor versions change. Even when the vendor name on your contract does not change, the model behind the API gets retrained, retuned, or rebuilt — and the new version sometimes behaves worse than the old version on your specific documents. Regression testing is the discipline that catches this before it ships.
+
+The cadence that works in production:
+
+- **Weekly: 50-document subset.** A fast sanity-check on the highest-traffic document types. Run automatically after any vendor version-bump notification.
+- **Monthly: full golden set.** The full 200–500 document evaluation. Track per-field F1 over time. Look for drift in specific fields, not just aggregate.
+- **Quarterly: golden-set refresh.** Add new documents, retire stale ones. Re-baseline the per-field expectations on the refreshed set.
+- **Vendor major-version bumps: full re-eval before promotion.** Vendors that release major versions (LlamaParse v2 → v3, Reducto major-version updates, etc.) should not be promoted to production until the full golden set has been re-evaluated. This is the case where the rollback risk is highest.
+
+**Pin vendor versions in production.** Most commercial vendors support version pinning; use it. The cost is missing out on improvements between pinned-version and current; the benefit is that production behavior changes only when you decide to upgrade, not when the vendor decides to roll out a new model overnight.
+
+Track regression as a separate operational metric. A healthy regression cadence catches roughly one to three regressions per year on a stable golden set. Zero regressions per year is a sign your golden set is not sensitive enough; more than five per year suggests vendor instability that may itself be a procurement signal.
 
 ## HITL feedback loops
 
-- The HITL queue **is** part of your eval. Accept/reject rate by reviewers is the most honest production accuracy signal you have.
-- Closed-loop is the goal: reviewer corrections feed back into the golden set, into prompt tuning, into vendor selection.
-- Anti-pattern: HITL as a dead-letter queue with no feedback. The reviewers correct documents; the system never learns.
+The HITL queue is part of the eval. This is the point that most teams underweight, and it costs them.
+
+Three production metrics live in the HITL queue:
+
+**Escalation rate.** The percentage of documents the system routes to a human reviewer. Healthy 2026 deployments sit in the 1–10% range in steady state. Below 1% suggests the system is silently accepting errors that should have escalated; above 10% suggests extraction is too unreliable for the workload (or eval rules are too strict).
+
+**Acceptance rate.** Of escalated documents, the percentage where the reviewer accepts the system's extraction as-is (versus correcting it). Healthy range: 30–70%. Below 30% means the system is escalating documents it should have caught itself but the model still produced acceptable output; above 70% means the system is escalating documents it actually got right and wasting reviewer time.
+
+**Correction patterns.** When reviewers correct, *what* do they correct? Track the per-field correction rate. A field that reviewers correct 40% of the time is a field the system handles poorly, regardless of what the per-field F1 on your golden set says. Production reviewer corrections are the most honest signal about model performance on novel documents — by definition, those documents were not in your golden set.
+
+**Closed-loop is the goal.** Reviewer corrections should feed back into:
+
+- The golden set (high-disagreement documents become labeled examples).
+- Prompt tuning (systematic errors trigger prompt revisions).
+- Vendor selection (a vendor whose corrections cluster in your high-value fields is a worse fit than one whose corrections cluster in low-value fields, even at equal aggregate accuracy).
+- Schema design (corrections that flag fields as ambiguous suggest the schema may need a "needs review" sentinel rather than an aggressive default).
+
+The anti-pattern is HITL as a dead-letter queue — reviewers correct documents one at a time, and the system never learns. This is the pattern that produces flat or declining accuracy over time while leadership wonders why the agentic-OCR investment is not paying off.
 
 ## Grounding and auditability for compliance
 
-- Grounding is not a feature. For compliance work (healthcare, legal, finance), it is a **requirement** at eval time.
-- Every extracted field must be traceable to a source region. Audit logs must persist for retention windows (HIPAA: 6+ years).
-- ZDR (Zero Data Retention) commitments from vendors (Landing AI ADE, Mistral self-host) — verify in eval that ZDR is actually honored in production.
+For regulated workloads, grounding is not a feature, it is a requirement.
+
+Practically, this means every extracted field carries metadata identifying the source region — page number, bounding box, optionally specific text span. The downstream consumer can render the output alongside the document with the cited region highlighted. The compliance auditor can verify the extraction. The HITL reviewer can correct it efficiently.
+
+The eval implication: **grounding accuracy is a first-class metric, not a checkbox**. Measure it on the golden set. Track it over time. A vendor whose field-level F1 is 95% but whose grounding-accuracy is 70% is a worse fit for a compliance workload than a vendor at 92%/95% — the second vendor's outputs are auditable; the first vendor's are not.
+
+The retention discipline matters too. Audit logs for grounded extractions need to persist for the regulatory retention window — six years for HIPAA, varying by jurisdiction for GDPR and SOX-equivalent regimes. Verify that the vendor's audit-log retention matches your regulatory window before signing, not after the first audit.
+
+For ZDR (Zero Data Retention) commitments — LandingAI ADE Team plan, Mistral self-hosted, certain Reducto configurations — verify in eval that ZDR is actually honored in production. The verification is operationally non-trivial: you cannot easily prove a negative ("the vendor did not retain my document"), but you can verify that the vendor's audit logs and infrastructure are consistent with the ZDR claim. Some compliance regimes require a SOC 2 Type II report that specifically attests to ZDR; insist on this rather than the bare contractual claim.
 
 ## Cost-aware evaluation
 
-- Most teams report accuracy without cost; that's incomplete.
-- Track three numbers jointly: **accuracy**, **cost-per-page**, **HITL escalation rate**.
-- The number that predicts your monthly bill is **cost-per-correct-extraction-with-provenance**:
-  $$\text{cost-per-correct} = \frac{\text{API cost per page}}{\text{accuracy}} + \text{HITL cost} \times \text{escalation rate}$$
-- This number tells you whether the 5× cheaper parser is actually cheaper. Often it isn't.
+The metric most teams report — accuracy — is the wrong target. The metric that predicts the monthly bill is **cost-per-correct-extraction-with-provenance**, which combines accuracy with cost and HITL load:
+
+$$
+\text{cost-per-correct} = \frac{\text{API cost per page}}{\text{accuracy}} + \text{HITL cost per escalation} \times \text{escalation rate}
+$$
+
+Worked example. A vendor at $0.012 per page with 90% accuracy and a 5% escalation rate at $3 per escalation:
+
+- API contribution: $0.012 ÷ 0.90 = $0.0133 per correct extraction.
+- HITL contribution: $3 × 0.05 = $0.15 per page; $0.15 / 0.90 = $0.167 per correct extraction.
+- Total: $0.180 per correct extraction.
+
+A competing vendor at $0.008 per page with 82% accuracy and an 8% escalation rate at the same $3 per escalation:
+
+- API contribution: $0.008 ÷ 0.82 = $0.00976 per correct extraction.
+- HITL contribution: $3 × 0.08 = $0.24 per page; $0.24 / 0.82 = $0.293 per correct extraction.
+- Total: $0.303 per correct extraction.
+
+The second vendor is 33% cheaper per page and 68% more expensive per correct extraction. The cost-per-page number is misleading; the cost-per-correct number is the actual answer.
+
+Run this calculation on every vendor in your shortlist. Most teams find the ranking changes — sometimes substantially — relative to ranking by cost per page or accuracy alone. The combined metric is the one that should govern the decision.
+
+A practical note on the HITL cost estimate. A reviewer who is a domain expert (a paralegal for legal documents, a nurse for clinical records) loads at roughly $50–$150 per hour. At three to five minutes per review, that translates to $2.50–$12.50 per escalation. Plug your team's actual numbers in; the order of magnitude is robust, but the specific cost-per-correct number is sensitive to this input.
 
 ## When your eval is the bottleneck
 
-- If your eval is fast, your eval is suspicious. Real evals are slow.
-- If your eval is small (<100 docs), it can't reliably distinguish vendors within 5pp.
-- If your eval has no out-of-distribution slice, you don't know how the system fails on novel documents.
-- Investment in eval is almost always under-funded relative to investment in model selection. Reverse this.
+A few honest observations about eval that most vendor pitches will not surface:
 
-## Named takes
+**If your eval is fast, your eval is suspicious.** Real evals on 200–500 documents take minutes to tens of minutes to run end-to-end, depending on the vendor's API and your eval rubric. An eval that completes in seconds is probably scoring against a too-small subset, a too-permissive rubric, or both.
 
-> *"Golden sets are unfashionable, slow, and the single best ROI any agentic OCR team can deliver. Build one before you buy anything."*
+**If your eval is small (under 100 documents), it can't reliably distinguish vendors within 5 percentage points.** The statistical noise on a 50-document eval is large enough that a vendor scoring 87% and one scoring 82% are not reliably different. 200+ documents is the minimum for reliable cross-vendor comparison.
 
-> *"If your eval is faster than your inference, your eval is wrong. Real evals are not fast."*
+**If your eval has no OOD slice, you don't know how the system fails on novel documents.** Hold out a slice of explicitly out-of-distribution documents — document types your production traffic has not yet seen, or vendor formats new to your pipeline — and measure separately. Most production incidents start as OOD failures; an eval that never tests OOD performance is silent about the most consequential failure mode.
+
+**Investment in eval is almost always under-funded relative to investment in model selection.** The standard ratio is something like 10:1 in favor of evaluating vendors and against building the eval that makes vendor evaluation meaningful. Reverse this. Spend more time on the golden set, more time on metric selection, more time on regression cadence. The vendor decision becomes obvious once the eval is good.
+
+## What good eval looks like in production
+
+A healthy 2026 agentic OCR deployment exhibits these eval properties simultaneously:
+
+- **Golden set of 200–500 documents** from production traffic, refreshed quarterly.
+- **One to three metrics** matched to the workload (typically: field-level F1, schema-validity, grounding accuracy).
+- **Per-field tracking**, not just aggregate.
+- **Regression cadence** — weekly subset, monthly full, quarterly refresh, vendor-version full re-eval.
+- **HITL closed-loop**: corrections flow back into the golden set, prompt tuning, vendor selection.
+- **Cost-per-correct-extraction** computed and reported as the primary economic metric.
+- **OOD slice** held out and measured separately to surface novel-document failures.
+
+No deployment achieves all seven on day one. Teams that work toward them iteratively, over twelve to eighteen months, produce robust, defensible eval infrastructure. Teams that treat eval as a setup task to be completed and forgotten produce evaluations that gradually lose connection to production reality and start lying without warning.
+
+::: {.callout-tip title="Named takes" appearance="simple"}
+*Golden sets are unfashionable, slow, and the single best ROI any agentic OCR team can deliver. Build one before you buy anything.*
+
+*If your eval is faster than your inference, your eval is wrong. Real evals are not fast.*
+
+*The HITL queue is part of the eval, not a fallback bolted on the side. The metric that tells you the most about your system in production lives in the reviewer's accept/correct decisions.*
+:::
