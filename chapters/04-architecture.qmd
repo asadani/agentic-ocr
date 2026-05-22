@@ -120,6 +120,50 @@ These hyperscaler Layout APIs serve the same architectural role as PP-StructureV
 
 The honest framing: **Pattern C is the architecture for workloads where errors cost more than engineering does**. Healthcare prior-authorization fits because a denied claim costs hundreds to thousands of dollars in downstream rework, dwarfing the marginal engineering cost of a hybrid pipeline. Legal contract review fits because a missed clause can be a six-figure legal exposure. KYC document review fits because a wrongly approved high-risk account can be a regulatory event. Commodity invoice processing rarely fits, because the marginal error cost is too low to justify the engineering.
 
+## Document classification — the often-missed primitive
+
+The three reference architectures above describe the *extraction* core. In production deployments handling more than one document type — which is most production deployments — there is a step that conceptually precedes extraction and meaningfully changes the architecture: **document classification**.
+
+The classification step's job is to decide *what kind of document this is* before deciding how to extract from it. An incoming PDF could be an invoice, a contract, a claim form, a clinical note, a driver's license, or a fax cover sheet with the actual document on the back. The downstream extraction logic depends on the answer: an invoice goes through a vendor-specific schema; a contract goes through clause extraction; a claim form goes through a different pipeline with HITL gating tuned to claim severity.
+
+The architectural shape is **classify-then-route**:
+
+```{mermaid}
+%%| fig-cap: "Classify-then-route — adding classification ahead of extraction"
+flowchart LR
+    A[Document] --> B[Classifier]
+    B --> C{Document type}
+    C -- Invoice --> D1[Invoice pipeline]
+    C -- Contract --> D2[Contract pipeline]
+    C -- Claim --> D3[Claim pipeline]
+    C -- Unknown --> D4[HITL triage]
+    D1 & D2 & D3 --> E[Structured output]
+    D4 --> E
+```
+
+This is a Pattern C variation (sometimes integrated into a larger Pattern C; sometimes a stand-alone routing layer in front of Pattern B pipelines). Three common implementations in 2026:
+
+- **Lightweight classifier model.** A small, fast specialized classifier — typically a fine-tuned BERT-class model or an embedding-plus-kNN approach — produces a document-type label in milliseconds. Cheap, accurate on in-distribution types, fails ungracefully on novel types. The right default for narrow-but-stable document distributions where the class set is small and known.
+- **LLM-based zero-shot classification.** A VLM or LLM call with a prompt like "Classify this document as one of: invoice, contract, claim, clinical note, other." Slower and more expensive per document than a dedicated classifier, but flexible — new document types can be added by editing the prompt rather than retraining a model. The right choice when the document distribution is wide and evolving, or when the classification needs to consider visual cues (a logo, a layout fingerprint).
+- **Layout-based heuristics.** Cheap rule-based classifiers using bounding-box patterns from the layout-detector stage. ("If there are exactly four large text blocks in the top quadrant and a table below, it's an invoice.") Brittle but free; useful as a confidence-boosting cross-check for the LLM-based classifier rather than as the sole classifier.
+
+The hyperscaler equivalents are first-class. AWS Bedrock Data Automation and Azure DI Prebuilt models effectively do classification + extraction in one call by routing to a specific blueprint or prebuilt model; Databricks' `ai_classify` is the explicit primitive. The hyperscaler-platform tier has converged on classify-then-route as the default architecture, which is one indicator that it is the right default.
+
+### Why classification gets missed
+
+The single largest 2026 procurement mistake involving classification is **assuming the parser also handles it**. Most parsers — including the agentic-OCR specialists — do not classify. They extract whatever they are pointed at against whatever schema they are given. If you point an invoice parser at a contract, you get an extraction that conforms to the invoice schema and is mostly nonsense. The system did its job; the system was given the wrong job.
+
+The fix is to put classification *in front of* extraction as an explicit step, with its own evaluation, its own monitoring, and its own HITL escalation path for novel or low-confidence cases. Teams that build agentic OCR pipelines without classification routinely encounter a class of production failures that look like "the extractor is wrong" but are actually "the extractor was given a document outside its design distribution and had no way to flag the mismatch."
+
+### Failure modes when classification is wrong
+
+A wrong classification fails worse than a missing extraction, because the system is now confidently doing the wrong thing. The two failure modes:
+
+- **Misclassification followed by confident extraction.** The system classifies a contract as an invoice, routes to the invoice pipeline, and emits a structured "invoice" with fields scraped from the contract. The values are plausible (vendor name, dates, dollar amounts all exist in contracts) but wrong. Downstream consumers may not notice until reconciliation fails weeks later.
+- **Novel-class blindness.** A document arrives that does not match any known class. A well-engineered classifier returns "unknown" with low confidence and routes to HITL triage. A poorly-engineered classifier returns its closest-match class with moderate confidence, sending the novel document into the wrong extraction pipeline. The defense is an explicit "unknown / out-of-distribution" class in the classifier's label set, and routing on that class to HITL by default.
+
+Both failures are catchable with the eval discipline of @sec-evaluating-pipeline — *if* classification is measured as a separate accuracy axis from extraction. Bundling them into a single "did we get the answer right" metric hides exactly the failures that originate in classification.
+
 ## Tool chains, memory, and HITL gates
 
 The three patterns above describe the extraction core. Production agentic OCR systems have additional components that the simplified diagrams elide.

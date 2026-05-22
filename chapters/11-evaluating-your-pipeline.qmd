@@ -137,6 +137,61 @@ Run this calculation on every vendor in your shortlist. Most teams find the rank
 
 A practical note on the HITL cost estimate. A reviewer who is a domain expert (a paralegal for legal documents, a nurse for clinical records) loads at roughly $50–$150 per hour. At three to five minutes per review, that translates to $2.50–$12.50 per escalation. Plug your team's actual numbers in; the order of magnitude is robust, but the specific cost-per-correct number is sensitive to this input.
 
+## Production cost observability
+
+Most teams treat cost as a finance problem rather than an evaluation problem. In agentic OCR specifically this is the wrong framing. Cost is volatile in this category in ways that traditional infrastructure cost is not: a vendor changes its pricing tiers, a model regression bumps the average retry budget, a misclassified batch flows through the most expensive premium tier instead of the standard one, a runaway query against the platform-tier products hits five figures in a single run. The failure modes are operational, not financial, and they belong in the observability stack.
+
+Three things every production agentic OCR deployment should be tracking from week one.
+
+### Per-document cost attribution
+
+Every processed document should carry an attached cost record. Not "we spent $X this month on parsing" — that's a finance report. What's needed is **per-document cost broken down by step**: classification cost, parsing cost (and which tier was invoked), retry cost (how many retries triggered, and at what unit price each), validation cost, HITL escalation cost where applicable.
+
+The cost record is what lets you answer the question that matters in incidents: *why did this document cost forty cents when the median is three?* Without per-document attribution, the answer is unfindable. With it, the answer is usually "the reflection loop retried six times, each at the agentic-plus tier" — which is then a fixable failure mode.
+
+The implementation: emit a structured cost event to your observability backend alongside every extraction. Most teams under-engineer this and discover they cannot trace cost back to documents when a budget alarm fires. Engineer it once, properly, before you need it.
+
+### Budget alerts and circuit breakers
+
+Two thresholds worth defining explicitly:
+
+- **Daily/monthly budget envelope.** A soft alert at 60% of expected spend, a hard alert at 90%, an action threshold at 110%. The action threshold should trigger a circuit breaker — automatic throttling, rejection of low-priority work, or in the worst case a temporary pipeline pause — rather than continuing to burn through budget until someone notices on the bill.
+- **Per-document cost ceiling.** A single document should not cost more than 3–5× the median for its document class. When it does, something has gone wrong (retry-thrash, mismatched tier, classification error routing to a more expensive pipeline). The right response is to stop processing that document and escalate to HITL or a dead-letter queue rather than let the reflection loop burn an unlimited retry budget.
+
+Both of these need to be implemented at the application layer, not relied on at the vendor layer. Vendors will happily process the runaway document and bill you for it. Your team's spend discipline is your problem.
+
+A 2026 incident worth knowing about: a Snowflake Cortex customer reported a single `AI_PARSE_DOCUMENT` query that ran up roughly $5,000 in credits when run against a large corpus without throttling [@snowflakecortexcost2026]. The pattern is common across all platform-tier products — the convenience of "just call this SQL function" hides how aggressively the function will scale when given an aggressive query. Circuit breakers are the cure.
+
+### Vendor-cost drift detection
+
+Vendors change prices. Models change behavior. A model retrain at the vendor can shift the median number of input tokens per document — at frontier-VLM API pricing that translates directly to a higher cost per page even though the per-token rate did not change. The vendor's pricing page still says the old number; your monthly bill says the new number.
+
+Track three metrics weekly on a representative subset of production traffic:
+
+- **Median cost per page**, by document class and vendor tier.
+- **Median cost per correct extraction** (i.e., cost / accuracy on the golden set).
+- **P95 cost per document** — the long tail is where retry-thrash and runaway extractions hide.
+
+A 10%+ shift week-over-week on any of these is a signal to investigate. Sometimes it is real (vendor pricing change, model retrain) and you adjust budgets. Sometimes it is a regression on your side (classification accuracy dropped, more documents now route to the expensive tier) and you fix it.
+
+### The cost / accuracy frontier
+
+The denominator that should govern operational decisions — **cost-per-correct-extraction-with-provenance** — is itself a moving target. As vendors evolve and as your document distribution shifts, the optimal point on the cost / accuracy frontier moves. Teams that rebalance vendor mix or tier choice on this signal every quarter outperform teams that pick a configuration once and ride it until budgets force a panic.
+
+Practical pattern: maintain a small "challenger" eval — 5–10% of production traffic routed to a different vendor or tier — and compare cost-per-correct against the current champion. Promote when the challenger wins on the joint metric; iterate. This is the same idea as champion/challenger experimentation in ML deployment, applied to vendor selection.
+
+### Runaway-cost failure modes
+
+A short catalog of cost incidents the field has accumulated by mid-2026:
+
+- **Retry-thrash on a difficult document class.** The reflection loop burns its full retry budget per document because the model cannot converge on a particular layout. Per-document cost goes up 5–10×, escalation rate creeps up, monthly bill spikes. Fix: detect thrash early (per-document retry count > N triggers escalation to HITL rather than further retries).
+- **Tier misrouting.** A classification mistake sends documents to the premium tier when the standard tier was appropriate. Fix: cross-check classification confidence against tier cost — if classification is below 70%, default to the cheaper tier with HITL on the output rather than burning premium-tier cost on uncertain documents.
+- **Vendor pricing changes mid-month.** A vendor doubles a tier's price; your budget assumptions are now wrong; the monthly bill is a surprise. Fix: weekly cost-per-page tracking, alerting on shifts.
+- **Platform-tier "convenience runaway."** Single `AI_PARSE_DOCUMENT`-style calls run against unscoped corpora, billing thousands in credits. Fix: enforce row-limit or document-count caps at the orchestration layer, not at the SQL function level.
+- **Frontier-VLM context-window inflation.** A prompt change or document trend pushes input tokens up; cost rises silently because token-based pricing is invisible per-document until you aggregate. Fix: track input-token median per document class as a separate metric.
+
+Each of these is preventable. None of them is automatically prevented by any vendor. Operational cost observability is the discipline that catches them before they catch you.
+
 ## When your eval is the bottleneck
 
 A few honest observations about eval that most vendor pitches will not surface:

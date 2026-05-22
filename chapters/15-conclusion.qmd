@@ -33,7 +33,9 @@ If the parsing-quality moat is disappearing, the obvious question is: what is re
 
 ### Agentic orchestration platforms
 
-The vendors that own the *workflow* around document understanding — not just the model that does extraction — have the strongest 2027 position. LlamaIndex with the LlamaParse + LlamaIndex stack is the canonical example. Landing AI ADE is building toward this with its expanded ontology and chunk-classification work. The platform tier (Databricks Document Intelligence, eventually Snowflake and Microsoft Fabric equivalents) is the institutional version of the same move.
+The vendors that own the *workflow* around document understanding — not just the model that does extraction — have the strongest 2027 position. LlamaIndex with the LlamaParse + LlamaIndex stack is the canonical example. Landing AI ADE is building toward this with its expanded ontology and chunk-classification work.
+
+The **platform tier is now three vendors deep, not one** (the May 2026 update — @sec-commercial-players details). Databricks Document Intelligence has `ai_parse_document`; Snowflake Cortex has `AI_PARSE_DOCUMENT`; Microsoft Fabric has Foundry Tools integration with Azure DI. The naming convergence (`ai_parse_document` / `AI_PARSE_DOCUMENT`) is a leading indicator — when two competing platform vendors ship products with effectively the same name and the same SQL-function shape, the category has crystallized faster than usual. By 2027 a fourth entrant (a hyperscaler-platform play, possibly from AWS via Bedrock Data Automation deepening into RedShift/SageMaker) is the expected addition.
 
 The moat is integration depth, not parsing accuracy. A team that has built its agentic workflow on LlamaIndex's primitives cannot easily switch to Reducto for parsing without rebuilding the orchestration layer. The switching cost is the moat; the orchestration platform is the lock-in.
 

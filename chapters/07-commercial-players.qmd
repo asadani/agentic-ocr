@@ -146,15 +146,41 @@ A separate sub-tier worth calling out is the AI-native commercial IDP entrants: 
 
 The honest framing of this tier: choose classic IDP or AI-native commercial IDP when HITL is the load-bearing requirement, when the documents are within the classic-IDP design envelope (invoices, claims forms, KYC, contract abstraction), and when your procurement process is more comfortable with established vendor relationships than with the AI-native startup risk. Do not choose this tier expecting the agentic capabilities to match the specialist vendors at the same price point.
 
-## Databricks Document Intelligence — the platform tier
+## The platform tier — Databricks, Snowflake, Microsoft Fabric
+
+The most important structural shift in 2026 commercial agentic OCR is the rise of a **platform tier** distinct from pure-play vendors. Document parsing has been absorbed as a primitive into the major enterprise data platforms — Databricks Document Intelligence, Snowflake Cortex AI, and Microsoft Fabric AI Functions. For buyers already committed to one of these platforms, the procurement story has changed: agentic OCR is no longer a separate vendor relationship but a SQL function or AI Function call billed against existing platform capacity.
+
+Three vendors, three slightly different shapes:
+
+### Databricks Document Intelligence
 
 Databricks launched Document Intelligence in 2026 as a set of chainable SQL/AI functions: `ai_parse_document` (generally available), `ai_classify`, and `ai_extract` [@databricks2026documentintelligence]. The integration with Lakeflow, Unity Catalog, and Agent Bricks is tight enough that the product is best understood not as an OCR API but as a primitive in the Databricks data platform.
 
-The publicly reported numbers are aggressive. **5–7× lower cost than comparable VLM-only pipelines** for equivalent accuracy. A customer case study (Loopback Analytics, clinical-note extraction) reports approximately **90% cost reduction** for the same downstream entity-extraction outcome. The 16% across-the-board performance gain from inserting `ai_parse_document` upstream of agent frameworks (Chapter 6) is the cleanest single piece of evidence for the shift-left thesis in any 2026 publication.
+The publicly reported numbers are aggressive. **5–7× lower cost than comparable VLM-only pipelines** for equivalent accuracy. A customer case study (Loopback Analytics, clinical-note extraction) reports approximately **90% cost reduction** for the same downstream entity-extraction outcome. The 16% across-the-board performance gain from inserting `ai_parse_document` upstream of agent frameworks (@sec-shift-left) is the cleanest single piece of evidence for the shift-left thesis in any 2026 publication.
 
-The strategic significance is larger than the product. A platform vendor at Databricks' scale saying — with public benchmarks and customer case studies — that document reading is the gating constraint on agent quality is a meaningful institutional endorsement of the shift-left thesis. The other major data platforms (Snowflake, Microsoft Fabric, the LLM-platform vendors building their own) are reading the same signal and building toward the same tier.
+The strategic significance is larger than the product. A platform vendor at Databricks' scale saying — with public benchmarks and customer case studies — that document reading is the gating constraint on agent quality is a meaningful institutional endorsement of the shift-left thesis.
 
-The honest caveats are familiar: vendor-published numbers, OfficeQA is a new benchmark that Databricks maintains, the architecture is platform-locked (the product is meaningfully useful only if you are already on Databricks). For Databricks customers, it is the easiest agentic-OCR path imaginable. For non-Databricks customers, it is a data point about where the institutional landscape is heading, not an option you can buy.
+### Snowflake Cortex — AI_PARSE_DOCUMENT
+
+Snowflake matches Databricks' move with **`AI_PARSE_DOCUMENT`**, a Cortex AI function that extracts text, data, layout elements, and images from documents stored on internal or external stages [@snowflakeparsedocument]. The naming convention is not an accident — the two products converged on the same SQL-function shape, the same chainable-with-other-AI-functions architecture, and the same "agentic OCR as a primitive inside the data platform" positioning.
+
+Supported formats: PDF, DOCX, PPTX, JPEG, JPG, PNG, TIFF, TIF, HTML, TXT. Image extraction (added January 2026, in preview) lets `AI_PARSE_DOCUMENT` emit images embedded in documents — extracted images can be written to stages or passed directly to other Cortex AI functions for further analysis, which is the chaining pattern Snowflake recommends for end-to-end agentic pipelines.
+
+Billing is per page (with HTML/TXT chunked at 3,000 characters per billable page), charged against Snowflake credits. Pricing varies meaningfully by warehouse size and credit rate; the field-reported cost is roughly competitive with Databricks at typical configurations, with the caveat that **runaway costs are a known failure mode** — there are public 2026 incident writeups of single-query costs in the thousands of dollars when `AI_PARSE_DOCUMENT` is run against a large corpus without throttling. The cost-monitoring patterns in @sec-evaluating-pipeline apply doubly here.
+
+### Microsoft Fabric — AI Functions + Foundry Tools
+
+Microsoft Fabric takes a slightly different shape. Rather than ship a single `parse_document` function, Fabric integrates Azure AI Document Intelligence (via Foundry Tools) as a callable AI Function inside the Fabric environment [@msfabricaifunctions]. AI Functions in Fabric support multimodal input — images, PDFs, text — and use Fabric authentication, with all usage billed against the customer's Fabric capacity rather than separately metered.
+
+The practical effect: a Fabric customer running document workflows is using **Azure DI Layout** (or DI Prebuilt/Custom) under the hood, but through the Fabric interface rather than as a separate Azure subscription. SharePoint Premium (formerly Syntex) is the Microsoft 365 side of the same integration, oriented at end-user document workflows rather than analytics pipelines.
+
+The architectural distinction from Databricks and Snowflake is real: Databricks and Snowflake built their own document AI; Microsoft integrated Azure's. Both approaches work; both have customers; the choice is downstream of which platform you already use.
+
+### The strategic significance
+
+A platform-tier offering is what every cloud-native data team encounters first now when they search "how do I parse documents in [platform]." This changes vendor selection at the procurement level: for buyers already on one of these three platforms, the platform-tier product is the default candidate, and pure-play specialists have to actively justify being added on top.
+
+The honest caveats are familiar across all three: vendor-published numbers, benchmarks maintained by the platform vendor, and architecture that is platform-locked (each product is meaningfully useful only if you are already on the platform). For non-Databricks / non-Snowflake / non-Fabric customers, the platform tier is a data point about where the institutional landscape is heading, not an option you can buy directly. The pure-play specialists are not wrong to be nervous — but they are also not displaced from workloads outside these three platforms, which is most of the addressable market.
 
 ## Pricing matrix
 
@@ -187,6 +213,8 @@ The data in `data/commercial-players.csv` and the per-vendor cost notes above re
 | Classic IDP | Klippa | $0.010 | $0.040 |
 | Classic IDP | Rossum | $0.020 | $0.080 |
 | Platform | Databricks Document Intelligence | (platform-tier) | (platform-tier) |
+| Platform | Snowflake Cortex AI_PARSE_DOCUMENT | (platform-tier) | (platform-tier) |
+| Platform | Microsoft Fabric + Foundry Tools | (Fabric capacity) | (Fabric capacity) |
 
 Two orders of magnitude separate the floor and the ceiling. The salient point is not which vendor is cheapest; the salient point is that **pricing differences across vendors look big until you remember that error rate is the multiplier**. A vendor that is four times cheaper per page and has four times the field-level error rate is, on cost-per-correct-extraction, identical to the more expensive vendor. The pricing matrix is only meaningful when paired with the error-rate column, and the error-rate column only becomes meaningful when you measure it on your own documents.
 
