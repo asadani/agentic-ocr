@@ -25,7 +25,7 @@ The simplest architecture in modern agentic OCR is the one that, by the definiti
 
 ```{mermaid}
 %%| fig-cap: "Pattern A — Single-pass VLM"
-flowchart LR
+flowchart TB
     A[Document image] --> B[VLM]
     B --> C[Structured output]
 ```
@@ -51,7 +51,7 @@ Pattern B is the 2026 default for general-purpose agentic OCR. It is what the fi
 
 ```{mermaid}
 %%| fig-cap: "Pattern B — Agentic loop with reflection"
-flowchart LR
+flowchart TB
     A[Document] --> B[Plan]
     B --> C[Extract pass]
     C --> D{Confidence ok?}
@@ -89,13 +89,15 @@ Pattern C is the architecture that is winning the high-stakes benchmarks and the
 
 ```{mermaid}
 %%| fig-cap: "Pattern C — Hybrid CV+VLM"
-flowchart LR
+flowchart TB
     A[Document] --> B[Layout detector / CV]
     B --> C[Region routing]
     C --> D1[Text blocks → OCR]
     C --> D2[Tables → table extractor]
     C --> D3[Figures → VLM]
-    D1 & D2 & D3 --> E[Assembler]
+    D1 --> E[Assembler]
+    D2 --> E
+    D3 --> E
     E --> F[Validator]
     F --> G[Output]
 ```
@@ -130,14 +132,16 @@ The architectural shape is **classify-then-route**:
 
 ```{mermaid}
 %%| fig-cap: "Classify-then-route — adding classification ahead of extraction"
-flowchart LR
+flowchart TB
     A[Document] --> B[Classifier]
     B --> C{Document type}
     C -- Invoice --> D1[Invoice pipeline]
     C -- Contract --> D2[Contract pipeline]
     C -- Claim --> D3[Claim pipeline]
     C -- Unknown --> D4[HITL triage]
-    D1 & D2 & D3 --> E[Structured output]
+    D1 --> E[Structured output]
+    D2 --> E
+    D3 --> E
     D4 --> E
 ```
 

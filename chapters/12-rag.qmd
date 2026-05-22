@@ -27,7 +27,7 @@ The failure mode in the example above is not specific to that team. It is struct
 
 ```{mermaid}
 %%| fig-cap: "How agentic OCR feeds the RAG pipeline"
-flowchart LR
+flowchart TB
     A[Document] --> B[Agentic OCR<br/>+ structural metadata]
     B --> C[Semantic chunking<br/>section-aware]
     C --> D[Embedding]

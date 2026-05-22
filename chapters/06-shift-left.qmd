@@ -30,11 +30,13 @@ In document processing, the work being shifted is **structural and semantic unde
 
 ```{mermaid}
 %%| fig-cap: "Where the work moves under the shift-left thesis"
-flowchart LR
-    subgraph Classic
+flowchart TB
+    subgraph Classic [Classic pipeline]
+      direction TB
       A1[OCR] --> A2[Layout heuristics] --> A3[Template extraction] --> A4[Cleanup] --> A5[Downstream app]
     end
-    subgraph Agentic
+    subgraph Agentic [Agentic pipeline]
+      direction TB
       B1[Agentic OCR<br/>extract + validate + ground] --> B2[Downstream app]
     end
 ```

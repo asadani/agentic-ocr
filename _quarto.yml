@@ -73,6 +73,8 @@ format:
     number-sections: true
     fig-cap-location: bottom
     tbl-cap-location: top
+    fig-width: 6
+    fig-asp: 0.7
     include-in-header:
       text: |
         // Tighten tables: smaller font, no justification (kills hyphenated splits
@@ -82,6 +84,21 @@ format:
           set par(justify: false, leading: 0.55em)
           it
         }
+
+        // Mermaid diagrams: Quarto emits #box(image(..., width: 16in, height: ...))
+        // with the SVG's natural inch dimensions, which routinely exceed the
+        // ~6.5in A4 text width. Our set rules can't override the explicit
+        // width parameter, so we instead intercept the wrapping box and
+        // scale it down proportionally when it exceeds the available width.
+        #show box: it => layout(size => {
+          let m = measure(it)
+          if m.width > size.width and size.width > 0pt {
+            let s = size.width / m.width
+            scale(x: s * 100%, y: s * 100%, origin: top + left, reflow: true, it)
+          } else {
+            it
+          }
+        })
 
 execute:
   freeze: auto
