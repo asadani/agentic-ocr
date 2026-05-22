@@ -357,7 +357,13 @@ div.csl-indent {
   <li><a href="#the-general-framing-across-all-three" id="toc-the-general-framing-across-all-three" class="nav-link" data-scroll-target="#the-general-framing-across-all-three"><span class="header-section-number">7.4.4</span> The general framing across all three</a></li>
   </ul></li>
   <li><a href="#classic-idp-retrofitted" id="toc-classic-idp-retrofitted" class="nav-link" data-scroll-target="#classic-idp-retrofitted"><span class="header-section-number">7.5</span> Classic IDP, retrofitted</a></li>
-  <li><a href="#databricks-document-intelligence-the-platform-tier" id="toc-databricks-document-intelligence-the-platform-tier" class="nav-link" data-scroll-target="#databricks-document-intelligence-the-platform-tier"><span class="header-section-number">7.6</span> Databricks Document Intelligence — the platform tier</a></li>
+  <li><a href="#the-platform-tier-databricks-snowflake-microsoft-fabric" id="toc-the-platform-tier-databricks-snowflake-microsoft-fabric" class="nav-link" data-scroll-target="#the-platform-tier-databricks-snowflake-microsoft-fabric"><span class="header-section-number">7.6</span> The platform tier — Databricks, Snowflake, Microsoft Fabric</a>
+  <ul class="collapse">
+  <li><a href="#databricks-document-intelligence" id="toc-databricks-document-intelligence" class="nav-link" data-scroll-target="#databricks-document-intelligence"><span class="header-section-number">7.6.1</span> Databricks Document Intelligence</a></li>
+  <li><a href="#snowflake-cortex-ai_parse_document" id="toc-snowflake-cortex-ai_parse_document" class="nav-link" data-scroll-target="#snowflake-cortex-ai_parse_document"><span class="header-section-number">7.6.2</span> Snowflake Cortex — AI_PARSE_DOCUMENT</a></li>
+  <li><a href="#microsoft-fabric-ai-functions-foundry-tools" id="toc-microsoft-fabric-ai-functions-foundry-tools" class="nav-link" data-scroll-target="#microsoft-fabric-ai-functions-foundry-tools"><span class="header-section-number">7.6.3</span> Microsoft Fabric — AI Functions + Foundry Tools</a></li>
+  <li><a href="#the-strategic-significance" id="toc-the-strategic-significance" class="nav-link" data-scroll-target="#the-strategic-significance"><span class="header-section-number">7.6.4</span> The strategic significance</a></li>
+  </ul></li>
   <li><a href="#pricing-matrix" id="toc-pricing-matrix" class="nav-link" data-scroll-target="#pricing-matrix"><span class="header-section-number">7.7</span> Pricing matrix</a></li>
   <li><a href="#how-to-read-this-landscape" id="toc-how-to-read-this-landscape" class="nav-link" data-scroll-target="#how-to-read-this-landscape"><span class="header-section-number">7.8</span> How to read this landscape</a></li>
   </ul>
@@ -517,12 +523,33 @@ div.csl-indent {
 <p>A separate sub-tier worth calling out is the AI-native commercial IDP entrants: <strong>Nanonets</strong> and <strong>Docsumo</strong>. These vendors are younger than the classic IDP incumbents and are explicitly marketing agentic capabilities. Nanonets prices in workflow blocks ($0.30 per complex AI block, leading to under-$2-per-invoice end-to-end pricing), supports 100+ languages, and reports 34% of Fortune 500 as customers (vendor claim; treat accordingly). Docsumo claims 150+ document types out of the box at 95%+ accuracy, with a free 14-day / 1,000-page trial and tiered subscriptions thereafter.</p>
 <p>The honest framing of this tier: choose classic IDP or AI-native commercial IDP when HITL is the load-bearing requirement, when the documents are within the classic-IDP design envelope (invoices, claims forms, KYC, contract abstraction), and when your procurement process is more comfortable with established vendor relationships than with the AI-native startup risk. Do not choose this tier expecting the agentic capabilities to match the specialist vendors at the same price point.</p>
 </section>
-<section id="databricks-document-intelligence-the-platform-tier" class="level2" data-number="7.6">
-<h2 data-number="7.6" class="anchored" data-anchor-id="databricks-document-intelligence-the-platform-tier"><span class="header-section-number">7.6</span> Databricks Document Intelligence — the platform tier</h2>
+<section id="the-platform-tier-databricks-snowflake-microsoft-fabric" class="level2" data-number="7.6">
+<h2 data-number="7.6" class="anchored" data-anchor-id="the-platform-tier-databricks-snowflake-microsoft-fabric"><span class="header-section-number">7.6</span> The platform tier — Databricks, Snowflake, Microsoft Fabric</h2>
+<p>The most important structural shift in 2026 commercial agentic OCR is the rise of a <strong>platform tier</strong> distinct from pure-play vendors. Document parsing has been absorbed as a primitive into the major enterprise data platforms — Databricks Document Intelligence, Snowflake Cortex AI, and Microsoft Fabric AI Functions. For buyers already committed to one of these platforms, the procurement story has changed: agentic OCR is no longer a separate vendor relationship but a SQL function or AI Function call billed against existing platform capacity.</p>
+<p>Three vendors, three slightly different shapes:</p>
+<section id="databricks-document-intelligence" class="level3" data-number="7.6.1">
+<h3 data-number="7.6.1" class="anchored" data-anchor-id="databricks-document-intelligence"><span class="header-section-number">7.6.1</span> Databricks Document Intelligence</h3>
 <p>Databricks launched Document Intelligence in 2026 as a set of chainable SQL/AI functions: <code>ai_parse_document</code> (generally available), <code>ai_classify</code>, and <code>ai_extract</code> <span class="citation" data-cites="databricks2026documentintelligence">(<a href="../appendices/bibliography.html#ref-databricks2026documentintelligence" role="doc-biblioref">Databricks 2026</a>)</span>. The integration with Lakeflow, Unity Catalog, and Agent Bricks is tight enough that the product is best understood not as an OCR API but as a primitive in the Databricks data platform.</p>
-<p>The publicly reported numbers are aggressive. <strong>5–7× lower cost than comparable VLM-only pipelines</strong> for equivalent accuracy. A customer case study (Loopback Analytics, clinical-note extraction) reports approximately <strong>90% cost reduction</strong> for the same downstream entity-extraction outcome. The 16% across-the-board performance gain from inserting <code>ai_parse_document</code> upstream of agent frameworks (Chapter 6) is the cleanest single piece of evidence for the shift-left thesis in any 2026 publication.</p>
-<p>The strategic significance is larger than the product. A platform vendor at Databricks’ scale saying — with public benchmarks and customer case studies — that document reading is the gating constraint on agent quality is a meaningful institutional endorsement of the shift-left thesis. The other major data platforms (Snowflake, Microsoft Fabric, the LLM-platform vendors building their own) are reading the same signal and building toward the same tier.</p>
-<p>The honest caveats are familiar: vendor-published numbers, OfficeQA is a new benchmark that Databricks maintains, the architecture is platform-locked (the product is meaningfully useful only if you are already on Databricks). For Databricks customers, it is the easiest agentic-OCR path imaginable. For non-Databricks customers, it is a data point about where the institutional landscape is heading, not an option you can buy.</p>
+<p>The publicly reported numbers are aggressive. <strong>5–7× lower cost than comparable VLM-only pipelines</strong> for equivalent accuracy. A customer case study (Loopback Analytics, clinical-note extraction) reports approximately <strong>90% cost reduction</strong> for the same downstream entity-extraction outcome. The 16% across-the-board performance gain from inserting <code>ai_parse_document</code> upstream of agent frameworks (<a href="06-shift-left.html" class="quarto-xref"><span>Chapter 6</span></a>) is the cleanest single piece of evidence for the shift-left thesis in any 2026 publication.</p>
+<p>The strategic significance is larger than the product. A platform vendor at Databricks’ scale saying — with public benchmarks and customer case studies — that document reading is the gating constraint on agent quality is a meaningful institutional endorsement of the shift-left thesis.</p>
+</section>
+<section id="snowflake-cortex-ai_parse_document" class="level3" data-number="7.6.2">
+<h3 data-number="7.6.2" class="anchored" data-anchor-id="snowflake-cortex-ai_parse_document"><span class="header-section-number">7.6.2</span> Snowflake Cortex — AI_PARSE_DOCUMENT</h3>
+<p>Snowflake matches Databricks’ move with <strong><code>AI_PARSE_DOCUMENT</code></strong>, a Cortex AI function that extracts text, data, layout elements, and images from documents stored on internal or external stages <span class="citation" data-cites="snowflakeparsedocument">(<a href="../appendices/bibliography.html#ref-snowflakeparsedocument" role="doc-biblioref">Snowflake 2026</a>)</span>. The naming convention is not an accident — the two products converged on the same SQL-function shape, the same chainable-with-other-AI-functions architecture, and the same “agentic OCR as a primitive inside the data platform” positioning.</p>
+<p>Supported formats: PDF, DOCX, PPTX, JPEG, JPG, PNG, TIFF, TIF, HTML, TXT. Image extraction (added January 2026, in preview) lets <code>AI_PARSE_DOCUMENT</code> emit images embedded in documents — extracted images can be written to stages or passed directly to other Cortex AI functions for further analysis, which is the chaining pattern Snowflake recommends for end-to-end agentic pipelines.</p>
+<p>Billing is per page (with HTML/TXT chunked at 3,000 characters per billable page), charged against Snowflake credits. Pricing varies meaningfully by warehouse size and credit rate; the field-reported cost is roughly competitive with Databricks at typical configurations, with the caveat that <strong>runaway costs are a known failure mode</strong> — there are public 2026 incident writeups of single-query costs in the thousands of dollars when <code>AI_PARSE_DOCUMENT</code> is run against a large corpus without throttling. The cost-monitoring patterns in <a href="11-evaluating-your-pipeline.html" class="quarto-xref"><span>Chapter 11</span></a> apply doubly here.</p>
+</section>
+<section id="microsoft-fabric-ai-functions-foundry-tools" class="level3" data-number="7.6.3">
+<h3 data-number="7.6.3" class="anchored" data-anchor-id="microsoft-fabric-ai-functions-foundry-tools"><span class="header-section-number">7.6.3</span> Microsoft Fabric — AI Functions + Foundry Tools</h3>
+<p>Microsoft Fabric takes a slightly different shape. Rather than ship a single <code>parse_document</code> function, Fabric integrates Azure AI Document Intelligence (via Foundry Tools) as a callable AI Function inside the Fabric environment <span class="citation" data-cites="msfabricaifunctions">(<a href="../appendices/bibliography.html#ref-msfabricaifunctions" role="doc-biblioref">Microsoft 2026</a>)</span>. AI Functions in Fabric support multimodal input — images, PDFs, text — and use Fabric authentication, with all usage billed against the customer’s Fabric capacity rather than separately metered.</p>
+<p>The practical effect: a Fabric customer running document workflows is using <strong>Azure DI Layout</strong> (or DI Prebuilt/Custom) under the hood, but through the Fabric interface rather than as a separate Azure subscription. SharePoint Premium (formerly Syntex) is the Microsoft 365 side of the same integration, oriented at end-user document workflows rather than analytics pipelines.</p>
+<p>The architectural distinction from Databricks and Snowflake is real: Databricks and Snowflake built their own document AI; Microsoft integrated Azure’s. Both approaches work; both have customers; the choice is downstream of which platform you already use.</p>
+</section>
+<section id="the-strategic-significance" class="level3" data-number="7.6.4">
+<h3 data-number="7.6.4" class="anchored" data-anchor-id="the-strategic-significance"><span class="header-section-number">7.6.4</span> The strategic significance</h3>
+<p>A platform-tier offering is what every cloud-native data team encounters first now when they search “how do I parse documents in [platform].” This changes vendor selection at the procurement level: for buyers already on one of these three platforms, the platform-tier product is the default candidate, and pure-play specialists have to actively justify being added on top.</p>
+<p>The honest caveats are familiar across all three: vendor-published numbers, benchmarks maintained by the platform vendor, and architecture that is platform-locked (each product is meaningfully useful only if you are already on the platform). For non-Databricks / non-Snowflake / non-Fabric customers, the platform tier is a data point about where the institutional landscape is heading, not an option you can buy directly. The pure-play specialists are not wrong to be nervous — but they are also not displaced from workloads outside these three platforms, which is most of the addressable market.</p>
+</section>
 </section>
 <section id="pricing-matrix" class="level2" data-number="7.7">
 <h2 data-number="7.7" class="anchored" data-anchor-id="pricing-matrix"><span class="header-section-number">7.7</span> Pricing matrix</h2>
@@ -693,6 +720,18 @@ div.csl-indent {
 <td>(platform-tier)</td>
 <td>(platform-tier)</td>
 </tr>
+<tr class="even">
+<td>Platform</td>
+<td>Snowflake Cortex AI_PARSE_DOCUMENT</td>
+<td>(platform-tier)</td>
+<td>(platform-tier)</td>
+</tr>
+<tr class="odd">
+<td>Platform</td>
+<td>Microsoft Fabric + Foundry Tools</td>
+<td>(Fabric capacity)</td>
+<td>(Fabric capacity)</td>
+</tr>
 </tbody>
 </table>
 <p>Two orders of magnitude separate the floor and the ceiling. The salient point is not which vendor is cheapest; the salient point is that <strong>pricing differences across vendors look big until you remember that error rate is the multiplier</strong>. A vendor that is four times cheaper per page and has four times the field-level error rate is, on cost-per-correct-extraction, identical to the more expensive vendor. The pricing matrix is only meaningful when paired with the error-rate column, and the error-rate column only becomes meaningful when you measure it on your own documents.</p>
@@ -734,6 +773,9 @@ Landing AI. 2026. <em>Agentic Document Extraction (<span>ADE</span>): Pricing an
 <div id="ref-parsebench2026" class="csl-entry" role="listitem">
 LlamaIndex, and Kaggle. 2026. <em>ParseBench: A Document Parsing Benchmark for AI Agents</em>. LlamaIndex Blog. <a href="https://www.llamaindex.ai/blog/parsebench">https://www.llamaindex.ai/blog/parsebench</a>.
 </div>
+<div id="ref-msfabricaifunctions" class="csl-entry" role="listitem">
+Microsoft. 2026. <em>Transform and Enrich Data with <span>AI</span> Functions in Microsoft Fabric</em>. Microsoft Learn. <a href="https://learn.microsoft.com/en-us/fabric/data-science/ai-functions/overview">https://learn.microsoft.com/en-us/fabric/data-science/ai-functions/overview</a>.
+</div>
 <div id="ref-mistralocr3" class="csl-entry" role="listitem">
 Mistral AI. 2026. <em>Introducing Mistral <span>OCR</span> 3</em>. Mistral AI. <a href="https://mistral.ai/news/mistral-ocr-3">https://mistral.ai/news/mistral-ocr-3</a>.
 </div>
@@ -742,6 +784,9 @@ Reducto AI. 2025. <em>Announcing RD-TableBench: An Open-Source Table Benchmark</
 </div>
 <div id="ref-reductoagenticocr" class="csl-entry" role="listitem">
 Reducto AI. 2026. <em>Reducto’s Hybrid Architecture: Technical Deep Dive into Agentic <span>OCR</span> and Multi-Pass Document Parsing</em>. Reducto Blog. <a href="https://llms.reducto.ai/hybrid-architecture-agentic-ocr-deep-dive">https://llms.reducto.ai/hybrid-architecture-agentic-ocr-deep-dive</a>.
+</div>
+<div id="ref-snowflakeparsedocument" class="csl-entry" role="listitem">
+Snowflake. 2026. <em>Parsing Documents with <span>AI_PARSE_DOCUMENT</span></em>. Snowflake Documentation. <a href="https://docs.snowflake.com/en/user-guide/snowflake-cortex/parse-document">https://docs.snowflake.com/en/user-guide/snowflake-cortex/parse-document</a>.
 </div>
 </div>
 </section>

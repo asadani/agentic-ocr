@@ -376,8 +376,16 @@ window.Quarto = {
   <li><a href="#hitl-feedback-loops" id="toc-hitl-feedback-loops" class="nav-link" data-scroll-target="#hitl-feedback-loops"><span class="header-section-number">11.5</span> HITL feedback loops</a></li>
   <li><a href="#grounding-and-auditability-for-compliance" id="toc-grounding-and-auditability-for-compliance" class="nav-link" data-scroll-target="#grounding-and-auditability-for-compliance"><span class="header-section-number">11.6</span> Grounding and auditability for compliance</a></li>
   <li><a href="#cost-aware-evaluation" id="toc-cost-aware-evaluation" class="nav-link" data-scroll-target="#cost-aware-evaluation"><span class="header-section-number">11.7</span> Cost-aware evaluation</a></li>
-  <li><a href="#when-your-eval-is-the-bottleneck" id="toc-when-your-eval-is-the-bottleneck" class="nav-link" data-scroll-target="#when-your-eval-is-the-bottleneck"><span class="header-section-number">11.8</span> When your eval is the bottleneck</a></li>
-  <li><a href="#what-good-eval-looks-like-in-production" id="toc-what-good-eval-looks-like-in-production" class="nav-link" data-scroll-target="#what-good-eval-looks-like-in-production"><span class="header-section-number">11.9</span> What good eval looks like in production</a></li>
+  <li><a href="#production-cost-observability" id="toc-production-cost-observability" class="nav-link" data-scroll-target="#production-cost-observability"><span class="header-section-number">11.8</span> Production cost observability</a>
+  <ul class="collapse">
+  <li><a href="#per-document-cost-attribution" id="toc-per-document-cost-attribution" class="nav-link" data-scroll-target="#per-document-cost-attribution"><span class="header-section-number">11.8.1</span> Per-document cost attribution</a></li>
+  <li><a href="#budget-alerts-and-circuit-breakers" id="toc-budget-alerts-and-circuit-breakers" class="nav-link" data-scroll-target="#budget-alerts-and-circuit-breakers"><span class="header-section-number">11.8.2</span> Budget alerts and circuit breakers</a></li>
+  <li><a href="#vendor-cost-drift-detection" id="toc-vendor-cost-drift-detection" class="nav-link" data-scroll-target="#vendor-cost-drift-detection"><span class="header-section-number">11.8.3</span> Vendor-cost drift detection</a></li>
+  <li><a href="#the-cost-accuracy-frontier" id="toc-the-cost-accuracy-frontier" class="nav-link" data-scroll-target="#the-cost-accuracy-frontier"><span class="header-section-number">11.8.4</span> The cost / accuracy frontier</a></li>
+  <li><a href="#runaway-cost-failure-modes" id="toc-runaway-cost-failure-modes" class="nav-link" data-scroll-target="#runaway-cost-failure-modes"><span class="header-section-number">11.8.5</span> Runaway-cost failure modes</a></li>
+  </ul></li>
+  <li><a href="#when-your-eval-is-the-bottleneck" id="toc-when-your-eval-is-the-bottleneck" class="nav-link" data-scroll-target="#when-your-eval-is-the-bottleneck"><span class="header-section-number">11.9</span> When your eval is the bottleneck</a></li>
+  <li><a href="#what-good-eval-looks-like-in-production" id="toc-what-good-eval-looks-like-in-production" class="nav-link" data-scroll-target="#what-good-eval-looks-like-in-production"><span class="header-section-number">11.10</span> What good eval looks like in production</a></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/anujsadani/agentic-ocr/edit/main/chapters/11-evaluating-your-pipeline.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/anujsadani/agentic-ocr/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
@@ -514,16 +522,65 @@ window.Quarto = {
 <p>Run this calculation on every vendor in your shortlist. Most teams find the ranking changes — sometimes substantially — relative to ranking by cost per page or accuracy alone. The combined metric is the one that should govern the decision.</p>
 <p>A practical note on the HITL cost estimate. A reviewer who is a domain expert (a paralegal for legal documents, a nurse for clinical records) loads at roughly $50–$150 per hour. At three to five minutes per review, that translates to $2.50–$12.50 per escalation. Plug your team’s actual numbers in; the order of magnitude is robust, but the specific cost-per-correct number is sensitive to this input.</p>
 </section>
-<section id="when-your-eval-is-the-bottleneck" class="level2" data-number="11.8">
-<h2 data-number="11.8" class="anchored" data-anchor-id="when-your-eval-is-the-bottleneck"><span class="header-section-number">11.8</span> When your eval is the bottleneck</h2>
+<section id="production-cost-observability" class="level2" data-number="11.8">
+<h2 data-number="11.8" class="anchored" data-anchor-id="production-cost-observability"><span class="header-section-number">11.8</span> Production cost observability</h2>
+<p>Most teams treat cost as a finance problem rather than an evaluation problem. In agentic OCR specifically this is the wrong framing. Cost is volatile in this category in ways that traditional infrastructure cost is not: a vendor changes its pricing tiers, a model regression bumps the average retry budget, a misclassified batch flows through the most expensive premium tier instead of the standard one, a runaway query against the platform-tier products hits five figures in a single run. The failure modes are operational, not financial, and they belong in the observability stack.</p>
+<p>Three things every production agentic OCR deployment should be tracking from week one.</p>
+<section id="per-document-cost-attribution" class="level3" data-number="11.8.1">
+<h3 data-number="11.8.1" class="anchored" data-anchor-id="per-document-cost-attribution"><span class="header-section-number">11.8.1</span> Per-document cost attribution</h3>
+<p>Every processed document should carry an attached cost record. Not “we spent $X this month on parsing” — that’s a finance report. What’s needed is <strong>per-document cost broken down by step</strong>: classification cost, parsing cost (and which tier was invoked), retry cost (how many retries triggered, and at what unit price each), validation cost, HITL escalation cost where applicable.</p>
+<p>The cost record is what lets you answer the question that matters in incidents: <em>why did this document cost forty cents when the median is three?</em> Without per-document attribution, the answer is unfindable. With it, the answer is usually “the reflection loop retried six times, each at the agentic-plus tier” — which is then a fixable failure mode.</p>
+<p>The implementation: emit a structured cost event to your observability backend alongside every extraction. Most teams under-engineer this and discover they cannot trace cost back to documents when a budget alarm fires. Engineer it once, properly, before you need it.</p>
+</section>
+<section id="budget-alerts-and-circuit-breakers" class="level3" data-number="11.8.2">
+<h3 data-number="11.8.2" class="anchored" data-anchor-id="budget-alerts-and-circuit-breakers"><span class="header-section-number">11.8.2</span> Budget alerts and circuit breakers</h3>
+<p>Two thresholds worth defining explicitly:</p>
+<ul>
+<li><strong>Daily/monthly budget envelope.</strong> A soft alert at 60% of expected spend, a hard alert at 90%, an action threshold at 110%. The action threshold should trigger a circuit breaker — automatic throttling, rejection of low-priority work, or in the worst case a temporary pipeline pause — rather than continuing to burn through budget until someone notices on the bill.</li>
+<li><strong>Per-document cost ceiling.</strong> A single document should not cost more than 3–5× the median for its document class. When it does, something has gone wrong (retry-thrash, mismatched tier, classification error routing to a more expensive pipeline). The right response is to stop processing that document and escalate to HITL or a dead-letter queue rather than let the reflection loop burn an unlimited retry budget.</li>
+</ul>
+<p>Both of these need to be implemented at the application layer, not relied on at the vendor layer. Vendors will happily process the runaway document and bill you for it. Your team’s spend discipline is your problem.</p>
+<p>A 2026 incident worth knowing about: a Snowflake Cortex customer reported a single <code>AI_PARSE_DOCUMENT</code> query that ran up roughly $5,000 in credits when run against a large corpus without throttling <span class="citation" data-cites="snowflakecortexcost2026">(<a href="../appendices/bibliography.html#ref-snowflakecortexcost2026" role="doc-biblioref">Seemore Data 2026</a>)</span>. The pattern is common across all platform-tier products — the convenience of “just call this SQL function” hides how aggressively the function will scale when given an aggressive query. Circuit breakers are the cure.</p>
+</section>
+<section id="vendor-cost-drift-detection" class="level3" data-number="11.8.3">
+<h3 data-number="11.8.3" class="anchored" data-anchor-id="vendor-cost-drift-detection"><span class="header-section-number">11.8.3</span> Vendor-cost drift detection</h3>
+<p>Vendors change prices. Models change behavior. A model retrain at the vendor can shift the median number of input tokens per document — at frontier-VLM API pricing that translates directly to a higher cost per page even though the per-token rate did not change. The vendor’s pricing page still says the old number; your monthly bill says the new number.</p>
+<p>Track three metrics weekly on a representative subset of production traffic:</p>
+<ul>
+<li><strong>Median cost per page</strong>, by document class and vendor tier.</li>
+<li><strong>Median cost per correct extraction</strong> (i.e., cost / accuracy on the golden set).</li>
+<li><strong>P95 cost per document</strong> — the long tail is where retry-thrash and runaway extractions hide.</li>
+</ul>
+<p>A 10%+ shift week-over-week on any of these is a signal to investigate. Sometimes it is real (vendor pricing change, model retrain) and you adjust budgets. Sometimes it is a regression on your side (classification accuracy dropped, more documents now route to the expensive tier) and you fix it.</p>
+</section>
+<section id="the-cost-accuracy-frontier" class="level3" data-number="11.8.4">
+<h3 data-number="11.8.4" class="anchored" data-anchor-id="the-cost-accuracy-frontier"><span class="header-section-number">11.8.4</span> The cost / accuracy frontier</h3>
+<p>The denominator that should govern operational decisions — <strong>cost-per-correct-extraction-with-provenance</strong> — is itself a moving target. As vendors evolve and as your document distribution shifts, the optimal point on the cost / accuracy frontier moves. Teams that rebalance vendor mix or tier choice on this signal every quarter outperform teams that pick a configuration once and ride it until budgets force a panic.</p>
+<p>Practical pattern: maintain a small “challenger” eval — 5–10% of production traffic routed to a different vendor or tier — and compare cost-per-correct against the current champion. Promote when the challenger wins on the joint metric; iterate. This is the same idea as champion/challenger experimentation in ML deployment, applied to vendor selection.</p>
+</section>
+<section id="runaway-cost-failure-modes" class="level3" data-number="11.8.5">
+<h3 data-number="11.8.5" class="anchored" data-anchor-id="runaway-cost-failure-modes"><span class="header-section-number">11.8.5</span> Runaway-cost failure modes</h3>
+<p>A short catalog of cost incidents the field has accumulated by mid-2026:</p>
+<ul>
+<li><strong>Retry-thrash on a difficult document class.</strong> The reflection loop burns its full retry budget per document because the model cannot converge on a particular layout. Per-document cost goes up 5–10×, escalation rate creeps up, monthly bill spikes. Fix: detect thrash early (per-document retry count &gt; N triggers escalation to HITL rather than further retries).</li>
+<li><strong>Tier misrouting.</strong> A classification mistake sends documents to the premium tier when the standard tier was appropriate. Fix: cross-check classification confidence against tier cost — if classification is below 70%, default to the cheaper tier with HITL on the output rather than burning premium-tier cost on uncertain documents.</li>
+<li><strong>Vendor pricing changes mid-month.</strong> A vendor doubles a tier’s price; your budget assumptions are now wrong; the monthly bill is a surprise. Fix: weekly cost-per-page tracking, alerting on shifts.</li>
+<li><strong>Platform-tier “convenience runaway.”</strong> Single <code>AI_PARSE_DOCUMENT</code>-style calls run against unscoped corpora, billing thousands in credits. Fix: enforce row-limit or document-count caps at the orchestration layer, not at the SQL function level.</li>
+<li><strong>Frontier-VLM context-window inflation.</strong> A prompt change or document trend pushes input tokens up; cost rises silently because token-based pricing is invisible per-document until you aggregate. Fix: track input-token median per document class as a separate metric.</li>
+</ul>
+<p>Each of these is preventable. None of them is automatically prevented by any vendor. Operational cost observability is the discipline that catches them before they catch you.</p>
+</section>
+</section>
+<section id="when-your-eval-is-the-bottleneck" class="level2" data-number="11.9">
+<h2 data-number="11.9" class="anchored" data-anchor-id="when-your-eval-is-the-bottleneck"><span class="header-section-number">11.9</span> When your eval is the bottleneck</h2>
 <p>A few honest observations about eval that most vendor pitches will not surface:</p>
 <p><strong>If your eval is fast, your eval is suspicious.</strong> Real evals on 200–500 documents take minutes to tens of minutes to run end-to-end, depending on the vendor’s API and your eval rubric. An eval that completes in seconds is probably scoring against a too-small subset, a too-permissive rubric, or both.</p>
 <p><strong>If your eval is small (under 100 documents), it can’t reliably distinguish vendors within 5 percentage points.</strong> The statistical noise on a 50-document eval is large enough that a vendor scoring 87% and one scoring 82% are not reliably different. 200+ documents is the minimum for reliable cross-vendor comparison.</p>
 <p><strong>If your eval has no OOD slice, you don’t know how the system fails on novel documents.</strong> Hold out a slice of explicitly out-of-distribution documents — document types your production traffic has not yet seen, or vendor formats new to your pipeline — and measure separately. Most production incidents start as OOD failures; an eval that never tests OOD performance is silent about the most consequential failure mode.</p>
 <p><strong>Investment in eval is almost always under-funded relative to investment in model selection.</strong> The standard ratio is something like 10:1 in favor of evaluating vendors and against building the eval that makes vendor evaluation meaningful. Reverse this. Spend more time on the golden set, more time on metric selection, more time on regression cadence. The vendor decision becomes obvious once the eval is good.</p>
 </section>
-<section id="what-good-eval-looks-like-in-production" class="level2" data-number="11.9">
-<h2 data-number="11.9" class="anchored" data-anchor-id="what-good-eval-looks-like-in-production"><span class="header-section-number">11.9</span> What good eval looks like in production</h2>
+<section id="what-good-eval-looks-like-in-production" class="level2" data-number="11.10">
+<h2 data-number="11.10" class="anchored" data-anchor-id="what-good-eval-looks-like-in-production"><span class="header-section-number">11.10</span> What good eval looks like in production</h2>
 <p>A healthy 2026 agentic OCR deployment exhibits these eval properties simultaneously:</p>
 <ul>
 <li><strong>Golden set of 200–500 documents</strong> from production traffic, refreshed quarterly.</li>
@@ -555,6 +612,9 @@ window.Quarto = {
 <div id="refs" class="references csl-bib-body hanging-indent" role="list" style="display: none">
 <div id="ref-rdtablebench" class="csl-entry" role="listitem">
 Reducto AI. 2025. <em>Announcing RD-TableBench: An Open-Source Table Benchmark</em>. Reducto Blog. <a href="https://reducto.ai/blog/rd-tablebench">https://reducto.ai/blog/rd-tablebench</a>.
+</div>
+<div id="ref-snowflakecortexcost2026" class="csl-entry" role="listitem">
+Seemore Data. 2026. <em>The Hidden Cost of Snowflake Cortex <span>AI</span>: A <span>$5K</span> Single-Query Wake-up Call</em>. Seemore Data Blog. <a href="https://seemoredata.io/blog/snowflake-cortex-ai/">https://seemoredata.io/blog/snowflake-cortex-ai/</a>.
 </div>
 </div>
 </section>

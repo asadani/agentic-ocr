@@ -348,8 +348,13 @@ div.csl-indent {
   <li><a href="#pattern-a-single-pass-vlm" id="toc-pattern-a-single-pass-vlm" class="nav-link" data-scroll-target="#pattern-a-single-pass-vlm"><span class="header-section-number">4.2</span> Pattern A: single-pass VLM</a></li>
   <li><a href="#pattern-b-agentic-loop-with-reflection" id="toc-pattern-b-agentic-loop-with-reflection" class="nav-link" data-scroll-target="#pattern-b-agentic-loop-with-reflection"><span class="header-section-number">4.3</span> Pattern B: agentic loop with reflection</a></li>
   <li><a href="#pattern-c-hybrid-cvvlm" id="toc-pattern-c-hybrid-cvvlm" class="nav-link" data-scroll-target="#pattern-c-hybrid-cvvlm"><span class="header-section-number">4.4</span> Pattern C: hybrid CV+VLM</a></li>
-  <li><a href="#tool-chains-memory-and-hitl-gates" id="toc-tool-chains-memory-and-hitl-gates" class="nav-link" data-scroll-target="#tool-chains-memory-and-hitl-gates"><span class="header-section-number">4.5</span> Tool chains, memory, and HITL gates</a></li>
-  <li><a href="#choosing-between-the-three-patterns" id="toc-choosing-between-the-three-patterns" class="nav-link" data-scroll-target="#choosing-between-the-three-patterns"><span class="header-section-number">4.6</span> Choosing between the three patterns</a></li>
+  <li><a href="#document-classification-the-often-missed-primitive" id="toc-document-classification-the-often-missed-primitive" class="nav-link" data-scroll-target="#document-classification-the-often-missed-primitive"><span class="header-section-number">4.5</span> Document classification — the often-missed primitive</a>
+  <ul class="collapse">
+  <li><a href="#why-classification-gets-missed" id="toc-why-classification-gets-missed" class="nav-link" data-scroll-target="#why-classification-gets-missed"><span class="header-section-number">4.5.1</span> Why classification gets missed</a></li>
+  <li><a href="#failure-modes-when-classification-is-wrong" id="toc-failure-modes-when-classification-is-wrong" class="nav-link" data-scroll-target="#failure-modes-when-classification-is-wrong"><span class="header-section-number">4.5.2</span> Failure modes when classification is wrong</a></li>
+  </ul></li>
+  <li><a href="#tool-chains-memory-and-hitl-gates" id="toc-tool-chains-memory-and-hitl-gates" class="nav-link" data-scroll-target="#tool-chains-memory-and-hitl-gates"><span class="header-section-number">4.6</span> Tool chains, memory, and HITL gates</a></li>
+  <li><a href="#choosing-between-the-three-patterns" id="toc-choosing-between-the-three-patterns" class="nav-link" data-scroll-target="#choosing-between-the-three-patterns"><span class="header-section-number">4.7</span> Choosing between the three patterns</a></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/anujsadani/agentic-ocr/edit/main/chapters/04-architecture.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/anujsadani/agentic-ocr/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
@@ -502,16 +507,63 @@ div.csl-indent {
 <p>These hyperscaler Layout APIs serve the same architectural role as PP-StructureV3 or Granite-Docling in the layout-detector slot of Pattern C — they emit structured regions that downstream extractors can route off. A pipeline that uses Azure DI Layout to segment, an LLM (frontier or Granite-Docling) to extract from text blocks, and a specialized table extractor for table regions, plus a schema validator and HITL queue, is a valid Pattern C architecture for organizations committed to Azure. The same shape works on GCP with Document AI Layout Parser and on AWS with Textract AnalyzeDocument Layout. Chapter 7 walks the hyperscaler sub-products in more detail.</p>
 <p>The honest framing: <strong>Pattern C is the architecture for workloads where errors cost more than engineering does</strong>. Healthcare prior-authorization fits because a denied claim costs hundreds to thousands of dollars in downstream rework, dwarfing the marginal engineering cost of a hybrid pipeline. Legal contract review fits because a missed clause can be a six-figure legal exposure. KYC document review fits because a wrongly approved high-risk account can be a regulatory event. Commodity invoice processing rarely fits, because the marginal error cost is too low to justify the engineering.</p>
 </section>
-<section id="tool-chains-memory-and-hitl-gates" class="level2" data-number="4.5">
-<h2 data-number="4.5" class="anchored" data-anchor-id="tool-chains-memory-and-hitl-gates"><span class="header-section-number">4.5</span> Tool chains, memory, and HITL gates</h2>
+<section id="document-classification-the-often-missed-primitive" class="level2" data-number="4.5">
+<h2 data-number="4.5" class="anchored" data-anchor-id="document-classification-the-often-missed-primitive"><span class="header-section-number">4.5</span> Document classification — the often-missed primitive</h2>
+<p>The three reference architectures above describe the <em>extraction</em> core. In production deployments handling more than one document type — which is most production deployments — there is a step that conceptually precedes extraction and meaningfully changes the architecture: <strong>document classification</strong>.</p>
+<p>The classification step’s job is to decide <em>what kind of document this is</em> before deciding how to extract from it. An incoming PDF could be an invoice, a contract, a claim form, a clinical note, a driver’s license, or a fax cover sheet with the actual document on the back. The downstream extraction logic depends on the answer: an invoice goes through a vendor-specific schema; a contract goes through clause extraction; a claim form goes through a different pipeline with HITL gating tuned to claim severity.</p>
+<p>The architectural shape is <strong>classify-then-route</strong>:</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+    A[Document] --&gt; B[Classifier]
+    B --&gt; C{Document type}
+    C -- Invoice --&gt; D1[Invoice pipeline]
+    C -- Contract --&gt; D2[Contract pipeline]
+    C -- Claim --&gt; D3[Claim pipeline]
+    C -- Unknown --&gt; D4[HITL triage]
+    D1 &amp; D2 &amp; D3 --&gt; E[Structured output]
+    D4 --&gt; E
+</pre>
+</div>
+<p></p><figcaption> Classify-then-route — adding classification ahead of extraction</figcaption> </figure><p></p>
+</div>
+</div>
+</div>
+<p>This is a Pattern C variation (sometimes integrated into a larger Pattern C; sometimes a stand-alone routing layer in front of Pattern B pipelines). Three common implementations in 2026:</p>
+<ul>
+<li><strong>Lightweight classifier model.</strong> A small, fast specialized classifier — typically a fine-tuned BERT-class model or an embedding-plus-kNN approach — produces a document-type label in milliseconds. Cheap, accurate on in-distribution types, fails ungracefully on novel types. The right default for narrow-but-stable document distributions where the class set is small and known.</li>
+<li><strong>LLM-based zero-shot classification.</strong> A VLM or LLM call with a prompt like “Classify this document as one of: invoice, contract, claim, clinical note, other.” Slower and more expensive per document than a dedicated classifier, but flexible — new document types can be added by editing the prompt rather than retraining a model. The right choice when the document distribution is wide and evolving, or when the classification needs to consider visual cues (a logo, a layout fingerprint).</li>
+<li><strong>Layout-based heuristics.</strong> Cheap rule-based classifiers using bounding-box patterns from the layout-detector stage. (“If there are exactly four large text blocks in the top quadrant and a table below, it’s an invoice.”) Brittle but free; useful as a confidence-boosting cross-check for the LLM-based classifier rather than as the sole classifier.</li>
+</ul>
+<p>The hyperscaler equivalents are first-class. AWS Bedrock Data Automation and Azure DI Prebuilt models effectively do classification + extraction in one call by routing to a specific blueprint or prebuilt model; Databricks’ <code>ai_classify</code> is the explicit primitive. The hyperscaler-platform tier has converged on classify-then-route as the default architecture, which is one indicator that it is the right default.</p>
+<section id="why-classification-gets-missed" class="level3" data-number="4.5.1">
+<h3 data-number="4.5.1" class="anchored" data-anchor-id="why-classification-gets-missed"><span class="header-section-number">4.5.1</span> Why classification gets missed</h3>
+<p>The single largest 2026 procurement mistake involving classification is <strong>assuming the parser also handles it</strong>. Most parsers — including the agentic-OCR specialists — do not classify. They extract whatever they are pointed at against whatever schema they are given. If you point an invoice parser at a contract, you get an extraction that conforms to the invoice schema and is mostly nonsense. The system did its job; the system was given the wrong job.</p>
+<p>The fix is to put classification <em>in front of</em> extraction as an explicit step, with its own evaluation, its own monitoring, and its own HITL escalation path for novel or low-confidence cases. Teams that build agentic OCR pipelines without classification routinely encounter a class of production failures that look like “the extractor is wrong” but are actually “the extractor was given a document outside its design distribution and had no way to flag the mismatch.”</p>
+</section>
+<section id="failure-modes-when-classification-is-wrong" class="level3" data-number="4.5.2">
+<h3 data-number="4.5.2" class="anchored" data-anchor-id="failure-modes-when-classification-is-wrong"><span class="header-section-number">4.5.2</span> Failure modes when classification is wrong</h3>
+<p>A wrong classification fails worse than a missing extraction, because the system is now confidently doing the wrong thing. The two failure modes:</p>
+<ul>
+<li><strong>Misclassification followed by confident extraction.</strong> The system classifies a contract as an invoice, routes to the invoice pipeline, and emits a structured “invoice” with fields scraped from the contract. The values are plausible (vendor name, dates, dollar amounts all exist in contracts) but wrong. Downstream consumers may not notice until reconciliation fails weeks later.</li>
+<li><strong>Novel-class blindness.</strong> A document arrives that does not match any known class. A well-engineered classifier returns “unknown” with low confidence and routes to HITL triage. A poorly-engineered classifier returns its closest-match class with moderate confidence, sending the novel document into the wrong extraction pipeline. The defense is an explicit “unknown / out-of-distribution” class in the classifier’s label set, and routing on that class to HITL by default.</li>
+</ul>
+<p>Both failures are catchable with the eval discipline of <a href="11-evaluating-your-pipeline.html" class="quarto-xref"><span>Chapter 11</span></a> — <em>if</em> classification is measured as a separate accuracy axis from extraction. Bundling them into a single “did we get the answer right” metric hides exactly the failures that originate in classification.</p>
+</section>
+</section>
+<section id="tool-chains-memory-and-hitl-gates" class="level2" data-number="4.6">
+<h2 data-number="4.6" class="anchored" data-anchor-id="tool-chains-memory-and-hitl-gates"><span class="header-section-number">4.6</span> Tool chains, memory, and HITL gates</h2>
 <p>The three patterns above describe the extraction core. Production agentic OCR systems have additional components that the simplified diagrams elide.</p>
 <p><strong>Tool inventory.</strong> A production system typically has access to: a layout detector (Pattern C central; optional for Pattern B), a table extractor, a schema validator (always), an external knowledge-base lookup for entity resolution (vendor IDs, ICD codes, ISO country codes), a redaction module for PII, a classification model for document-type routing, and a fallback OCR for when the primary extractor fails. Tool-using in the Chapter 3 sense means these are routinely invoked, not just technically available.</p>
 <p><strong>Memory.</strong> Short-term memory carries context within a single document — heading hierarchy, units of measurement, vendor identity established on page 1 — into extractions on later pages. Long-term memory carries vendor-specific corrections from HITL queues back into prompts, document-type priors learned across deployments, and audit logs of model behavior for drift detection. Few public vendors talk much about their memory architectures, but the gap between vendors that have solid memory engineering and those that do not is sharply visible in production over a six-month window.</p>
 <p><strong>HITL gates.</strong> Every production architecture has a path to a human reviewer. The question is where in the pipeline the gate sits. The healthier patterns place HITL gates post-validation, before output, with the failing field highlighted on the source page and the candidate extraction pre-populated for the reviewer to accept, reject, or correct. The unhealthier patterns dump entire documents into a queue with no annotation, requiring the reviewer to find the issue manually. The healthy version cuts reviewer time per case from minutes to seconds.</p>
 <p>The escalation rate is one of the most diagnostic production signals. A healthy 2026 agentic OCR deployment escalates somewhere between 1% and 10% of documents. Below 1% suggests the system is silently swallowing errors that should have escalated; above 10% suggests the extraction is too unreliable for the workload (or that the eval rules are too strict, but that’s the easier failure to diagnose).</p>
 </section>
-<section id="choosing-between-the-three-patterns" class="level2" data-number="4.6">
-<h2 data-number="4.6" class="anchored" data-anchor-id="choosing-between-the-three-patterns"><span class="header-section-number">4.6</span> Choosing between the three patterns</h2>
+<section id="choosing-between-the-three-patterns" class="level2" data-number="4.7">
+<h2 data-number="4.7" class="anchored" data-anchor-id="choosing-between-the-three-patterns"><span class="header-section-number">4.7</span> Choosing between the three patterns</h2>
 <p>The decision reduces to two axes: <strong>document variability</strong> and <strong>stakes</strong>.</p>
 <ul>
 <li><strong>Narrow variability, low stakes</strong> → Pattern A. Don’t pay for a loop you don’t need.</li>
