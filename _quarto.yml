@@ -9,7 +9,7 @@ book:
   date: "2026-05-21"
   date-format: "MMMM YYYY"
   search: true
-  repo-url: https://github.com/anujsadani/agentic-ocr
+  repo-url: https://github.com/asadani/agentic-ocr
   repo-actions: [edit, issue]
   downloads: [pdf]
   output-file: agentic-ocr-2026
