@@ -414,7 +414,7 @@ div.csl-indent {
 <div>
 <p></p><figure class="figure"><p></p>
 <div>
-<pre class="mermaid mermaid-js">flowchart LR
+<pre class="mermaid mermaid-js">flowchart TB
     A[Document image] --&gt; B[VLM]
     B --&gt; C[Structured output]
 </pre>
@@ -443,7 +443,7 @@ div.csl-indent {
 <div>
 <p></p><figure class="figure"><p></p>
 <div>
-<pre class="mermaid mermaid-js">flowchart LR
+<pre class="mermaid mermaid-js">flowchart TB
     A[Document] --&gt; B[Plan]
     B --&gt; C[Extract pass]
     C --&gt; D{Confidence ok?}
@@ -478,13 +478,15 @@ div.csl-indent {
 <div>
 <p></p><figure class="figure"><p></p>
 <div>
-<pre class="mermaid mermaid-js">flowchart LR
+<pre class="mermaid mermaid-js">flowchart TB
     A[Document] --&gt; B[Layout detector / CV]
     B --&gt; C[Region routing]
     C --&gt; D1[Text blocks → OCR]
     C --&gt; D2[Tables → table extractor]
     C --&gt; D3[Figures → VLM]
-    D1 &amp; D2 &amp; D3 --&gt; E[Assembler]
+    D1 --&gt; E[Assembler]
+    D2 --&gt; E
+    D3 --&gt; E
     E --&gt; F[Validator]
     F --&gt; G[Output]
 </pre>
@@ -517,14 +519,16 @@ div.csl-indent {
 <div>
 <p></p><figure class="figure"><p></p>
 <div>
-<pre class="mermaid mermaid-js">flowchart LR
+<pre class="mermaid mermaid-js">flowchart TB
     A[Document] --&gt; B[Classifier]
     B --&gt; C{Document type}
     C -- Invoice --&gt; D1[Invoice pipeline]
     C -- Contract --&gt; D2[Contract pipeline]
     C -- Claim --&gt; D3[Claim pipeline]
     C -- Unknown --&gt; D4[HITL triage]
-    D1 &amp; D2 &amp; D3 --&gt; E[Structured output]
+    D1 --&gt; E[Structured output]
+    D2 --&gt; E
+    D3 --&gt; E
     D4 --&gt; E
 </pre>
 </div>

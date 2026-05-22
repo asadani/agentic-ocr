@@ -415,11 +415,13 @@ div.csl-indent {
 <div>
 <p></p><figure class="figure"><p></p>
 <div>
-<pre class="mermaid mermaid-js">flowchart LR
-    subgraph Classic
+<pre class="mermaid mermaid-js">flowchart TB
+    subgraph Classic [Classic pipeline]
+      direction TB
       A1[OCR] --&gt; A2[Layout heuristics] --&gt; A3[Template extraction] --&gt; A4[Cleanup] --&gt; A5[Downstream app]
     end
-    subgraph Agentic
+    subgraph Agentic [Agentic pipeline]
+      direction TB
       B1[Agentic OCR&lt;br/&gt;extract + validate + ground] --&gt; B2[Downstream app]
     end
 </pre>
