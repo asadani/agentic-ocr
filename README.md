@@ -6,8 +6,10 @@ Published as both an HTML book site (via GitHub Pages) and a downloadable PDF, b
 
 ## Reading the book
 
-- **Online:** [github-pages-url-here] *(set after first deploy)*
-- **PDF:** Available as a download link from the site, or in the latest release.
+- **📖 Live HTML book:** **<https://asadani.github.io/agentic-ocr/>**
+- **📄 PDF download:** **<https://asadani.github.io/agentic-ocr/agentic-ocr-2026.pdf>** (~3 MB)
+
+The HTML book has a "Download PDF" link in the top-right corner of every page.
 
 ## Structure
 
@@ -75,4 +77,6 @@ refreshes Quarto does.
 
 ## License
 
-TBD.
+[MIT](LICENSE) © 2026 Anuj Sadani.
+
+You are free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the book content, subject to the conditions in the [LICENSE](LICENSE) file.
